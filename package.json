@@ -2,5 +2,7 @@
   "name": "ficha-ruc",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test tests/ruc.test.mjs" }
+  "scripts": {
+    "test": "node --test tests/ruc.test.mjs tests/llave.test.mjs"
+  }
 }

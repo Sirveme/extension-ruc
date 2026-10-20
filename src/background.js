@@ -2,6 +2,7 @@
 // No lee paginas: el texto seleccionado lo entrega Chrome en el clic del menu.
 import { extraerRucs, motivoSinRuc } from "./lib/ruc.js";
 import * as api from "./lib/api.js";
+import { normalizarLlave } from "./lib/llave.js";
 
 const MENU = "ficha-ruc";
 
@@ -33,9 +34,9 @@ chrome.runtime.onMessage.addListener((m, sender, responder) => {
       case "cuota": return { cuota: await api.refrescarCuota(), tieneLlave: !!(await api.llave()) };
       case "pegar": await pedir(m.texto || "", "pegado"); return { ok: true };
       case "guardar_llave": {
-        const clave = String(m.llave || "").trim();
-        if (!/^psp_live_[a-z0-9]{8}_[A-Za-z0-9_-]{20,}$/.test(clave))
-          return { ok: false, texto: "Esa no parece una llave: empieza con psp_live_ y es larga." };
+        const n = normalizarLlave(m.llave);
+        if (!n.ok) return n;                        // motivo exacto (p. ej. pegó solo el prefijo)
+        const clave = n.llave;
         const v = await api.validar(clave);
         if (v.ok) await chrome.storage.local.set({ llave: clave });
         return v;                                   // nunca devuelve la llave

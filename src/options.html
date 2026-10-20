@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configuración · Ficha RUC</title>
+<link rel="stylesheet" href="ui.css">
+<style>main { max-width: 620px; margin: 0 auto; padding: 24px 16px; gap: 16px; } h1 { margin: 0; font-size: 22px; }
+  .caja { background: var(--s1); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 10px; }
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; } ul { margin: 0; padding-left: 18px; color: var(--fg2); }</style>
+</head>
+<body>
+<main>
+  <h1>Ficha RUC · Configuración</h1>
+  <section class="caja" aria-label="Tu llave">
+    <b>Tu llave</b>
+    <div id="estado" class="muted">Revisando…</div>
+    <label for="llave" class="muted">Pega tu llave (empieza con <span class="mono">psp_live_</span>)</label>
+    <input id="llave" type="password" autocomplete="off" spellcheck="false" placeholder="psp_live_…">
+    <div class="fila">
+      <button class="pri" id="guardar">Guardar y validar</button>
+      <button class="sec" id="mostrar" type="button">Mostrar</button>
+      <button class="sec" id="olvidar" type="button" hidden>Olvidar mi llave</button>
+    </div>
+    <div id="r" aria-live="polite"></div>
+    <p class="muted" style="margin:0">¿Aún no tienes llave? Escríbenos al WhatsApp <b class="mono">967317946</b>.</p>
+  </section>
+  <section class="caja" aria-label="Privacidad">
+    <b>Tu privacidad</b>
+    <ul>
+      <li>La extensión <b>no lee las páginas</b> que visitas. Solo usa el texto que tú seleccionas y eliges consultar.</li>
+      <li>Solo envía los RUC que tú pides. No guarda historial; lo ya consultado se recuerda hasta que cierras Chrome, para no gastar tu cuota dos veces.</li>
+      <li>Tu llave queda <b>solo en este equipo</b>: no se sincroniza ni la ven las páginas web.</li>
+      <li>La ficha muestra solo datos públicos del RUC. Nunca buzones ni notificaciones.</li>
+    </ul>
+  </section>
+</main>
+<script type="module" src="options.js"></script>
+</body>
+</html>

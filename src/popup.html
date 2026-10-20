@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ficha RUC</title>
+<link rel="stylesheet" href="ui.css">
+<style>body { width: 340px; } main { gap: 10px; }</style>
+</head>
+<body>
+<header class="cab"><b>Ficha RUC</b><span class="sp"></span><a href="options.html" target="_blank">Configuración</a></header>
+<main>
+  <div id="sinLlave" class="msg" hidden>Configura tu llave para ver fichas. <a href="options.html" target="_blank">Ir a Configuración</a></div>
+  <label for="texto" class="muted">Pega uno o varios RUC (o un texto que los tenga)</label>
+  <textarea id="texto" placeholder="20123456789&#10;10123456781"></textarea>
+  <div id="r" aria-live="polite"></div>
+  <button class="pri" id="ver">Ver ficha</button>
+</main>
+<footer class="pie"><span id="cuota"></span><span class="sp"></span><span>Nada se consulta sin tu clic</span></footer>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+/* Ficha RUC · tema oscuro del Club (Sepia). Nunca blanco puro. */
+:root {
+  --bg: #15100b; --s1: #1f1812; --s2: #2a2018; --line: #3f3125;
+  --fg: #f3eadf; --fg2: #dccab4; --muted: #a8957f;
+  --cobre: #f09a3e; --azul: #5fb9d6; --verde: #9bd17a; --rojo: #f0806a; --ambar: #e9b949;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--sans); }
+a { color: var(--azul); }
+button { font: 600 14px var(--sans); border-radius: 999px; padding: 8px 16px; cursor: pointer; border: 1px solid transparent; }
+button.pri { background: var(--cobre); color: #1a110a; }
+button.sec { background: transparent; color: var(--fg2); border-color: var(--line); }
+button:disabled { opacity: .55; cursor: default; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+input, textarea { width: 100%; background: var(--s1); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 11px; font: 14px var(--sans); }
+textarea { resize: vertical; min-height: 84px; font-family: var(--mono); }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.cab { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--s1); }
+.cab b { font-size: 15px; }
+.cab .sp { flex: 1; }
+.cab a { color: var(--muted); font-size: 12px; text-decoration: none; }
+.cab a:hover { color: var(--fg); }
+main { padding: 14px; display: grid; gap: 12px; }
+.msg { border-radius: 10px; padding: 10px 12px; background: var(--s2); border-left: 3px solid var(--azul); }
+.msg.err { border-left-color: var(--rojo); }
+.msg.ok { border-left-color: var(--verde); }
+.pie { padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.pie .sp { flex: 1; }
+
+/* Ficha */
+.ficha { display: grid; gap: 10px; }
+.ficha .ruc { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.ficha .ruc button { padding: 2px 10px; font-size: 12px; }
+.ficha h1 { margin: 0; font-size: 18px; line-height: 1.25; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--s2); font-size: 12.5px; }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.chip.verde::before { background: var(--verde); } .chip.ambar::before { background: var(--ambar); } .chip.rojo::before { background: var(--rojo); }
+.lugar { color: var(--fg2); }
+.alerta { border-radius: 10px; padding: 9px 11px; background: color-mix(in srgb, var(--rojo) 12%, var(--s1));
+  border: 1px solid color-mix(in srgb, var(--rojo) 45%, var(--line)); }
+.alerta b::before { content: "⚠ "; color: var(--rojo); }
+.info { border-radius: 10px; padding: 8px 11px; background: var(--s1); border: 1px solid var(--line); }
+.info b::before { content: "✓ "; color: var(--verde); }
+.alerta small, .info small { display: block; color: var(--muted); }
+.datos-al { color: var(--muted); font-size: 12px; }
+
+/* Tabla */
+.barra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.barra label { display: inline-flex; gap: 6px; align-items: center; color: var(--fg2); font-size: 13px; white-space: nowrap; }
+.barra .sp { flex: 1; }
+.tabla { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; }
+.tabla th:nth-child(1), .tabla td:nth-child(1) { width: 98px; }
+.tabla td { overflow-wrap: anywhere; }
+.tabla th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); }
+.tabla td { padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tabla tr.fila { cursor: pointer; }
+.tabla tr.fila:hover td { background: var(--s1); }
+.tabla .riesgo { color: var(--rojo); }
+.vacio { color: var(--muted); text-align: center; padding: 28px 8px; }
+.vacio b { display: block; color: var(--fg); font-size: 15px; margin-bottom: 4px; }

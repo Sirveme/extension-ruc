@@ -1,0 +1,6 @@
+{
+  "name": "ficha-ruc",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test tests/ruc.test.mjs" }
+}

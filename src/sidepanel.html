@@ -6,10 +6,13 @@
 <title>Ficha RUC</title>
 <link rel="stylesheet" href="ui.css">
 </head>
-<body>
-<header class="cab"><b>Ficha RUC</b><span class="sp"></span><a href="options.html" target="_blank">Configuración</a></header>
+<body class="panel">
+<header class="cab"><b>Ficha RUC</b><span class="marca">Perú Sistemas Pro</span><span class="sp"></span><a href="options.html" target="_blank">Configuración</a></header>
+<div class="fx" aria-label="Lo consultado"><i>fx</i><span id="fx"></span></div>
 <main id="vista" aria-live="polite"></main>
-<footer class="pie"><span id="cuota"></span><span class="sp"></span><span>Perú Sistemas Pro</span></footer>
+<div class="estado" role="status"><span id="datosAl"></span><span class="sp"></span><span id="cuota"></span></div>
+<!-- Pie reservado para la vitrina (se construye aparte). Alto fijo, siempre visible. -->
+<footer id="vitrina" class="vitrina" data-reservado="vitrina">Perú Sistemas Pro</footer>
 <script type="module" src="sidepanel.js"></script>
 </body>
 </html>

@@ -1,66 +1,113 @@
-/* Ficha RUC · tema oscuro del Club (Sepia). Nunca blanco puro. */
+/* Ficha RUC · familia visual "Excel Perú Sistemas Pro": la hoja de calculo del Club
+   (club.css): grilla de 1px, celdas, cabeceras en versalitas, numeros mono, semaforos y barra
+   de estado. Tokens del tema Sepia del Club. Oscuro siempre, nunca blanco puro. */
 :root {
-  --bg: #15100b; --s1: #1f1812; --s2: #2a2018; --line: #3f3125;
-  --fg: #f3eadf; --fg2: #dccab4; --muted: #a8957f;
-  --cobre: #f09a3e; --azul: #5fb9d6; --verde: #9bd17a; --rojo: #f0806a; --ambar: #e9b949;
+  --bg: #15100b; --cell: #1e1711; --cell-2: #261d15; --grid: #3d3024;
+  --fg: #f3eadf; --muted: #ad9a84; --faint: #75644f;
+  --accent: #e8a04a; --accent-ink: #1a110a; --sel: rgba(232, 160, 74, .13);
+  --lv-gratis: #9bd17a; --lv-cuenta: #5fb9d6; --lv-premium: #f09a3e;
+  --sem-verde: #4fbf7a; --sem-amarillo: #e3b341; --sem-rojo: #e5534b; --sem-gris: #8b949e;
   --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--sans); }
-a { color: var(--azul); }
-button { font: 600 14px var(--sans); border-radius: 999px; padding: 8px 16px; cursor: pointer; border: 1px solid transparent; }
-button.pri { background: var(--cobre); color: #1a110a; }
-button.sec { background: transparent; color: var(--fg2); border-color: var(--line); }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.45 var(--sans); }
+a { color: var(--lv-cuenta); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); } .faint { color: var(--faint); }
+button { font: 500 12.5px var(--sans); border-radius: 2px; padding: 6px 12px; cursor: pointer; border: 1px solid var(--grid);
+  background: var(--cell-2); color: var(--fg); }
+button:hover { border-color: var(--accent); }
+button.pri { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button.sec { background: var(--cell-2); color: var(--fg); }
 button:disabled { opacity: .55; cursor: default; }
-button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
-input, textarea { width: 100%; background: var(--s1); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
-  padding: 9px 11px; font: 14px var(--sans); }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, tr.fila:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+input, textarea { width: 100%; background: var(--cell); color: var(--fg); border: 1px solid var(--grid); border-radius: 2px; padding: 8px 10px; font: 13px var(--sans); }
 textarea { resize: vertical; min-height: 84px; font-family: var(--mono); }
-.mono { font-family: var(--mono); }
-.muted { color: var(--muted); }
-.cab { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--s1); }
-.cab b { font-size: 15px; }
-.cab .sp { flex: 1; }
+
+/* Cabecera, barra de formula, barra de estado y pie (comunes a panel y popup) */
+.cab { display: flex; align-items: baseline; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--grid); background: var(--cell-2); }
+.cab b { text-transform: uppercase; letter-spacing: .08em; font-size: 12.5px; }
+.cab .marca { color: var(--faint); font-size: 11.5px; }
+.cab .sp, .pie .sp, .estado .sp { flex: 1; }
 .cab a { color: var(--muted); font-size: 12px; text-decoration: none; }
 .cab a:hover { color: var(--fg); }
-main { padding: 14px; display: grid; gap: 12px; }
-.msg { border-radius: 10px; padding: 10px 12px; background: var(--s2); border-left: 3px solid var(--azul); }
-.msg.err { border-left-color: var(--rojo); }
-.msg.ok { border-left-color: var(--verde); }
-.pie { padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
-.pie .sp { flex: 1; }
+.fx { display: flex; border-bottom: 1px solid var(--grid); background: var(--cell); font-family: var(--mono); font-size: 12px; min-height: 28px; }
+.fx i { font-style: italic; color: var(--faint); padding: 5px 10px; border-right: 1px solid var(--grid); background: var(--cell-2); }
+.fx span { padding: 5px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+main { padding: 12px; display: grid; gap: 10px; align-content: start; }
+.msg { border: 1px solid var(--grid); border-left: 3px solid var(--lv-cuenta); background: var(--cell); padding: 8px 10px; }
+.msg.err { border-left-color: var(--sem-rojo); }
+.msg.ok { border-left-color: var(--sem-verde); }
+.pie, .estado { display: flex; gap: 10px; align-items: center; padding: 5px 12px; border-top: 1px solid var(--grid);
+  background: var(--cell-2); color: var(--muted); font-size: 11.5px; font-family: var(--mono); }
 
-/* Ficha */
+/* Panel lateral: cabecera y pie fijos; solo el contenido se desplaza */
+body.panel { height: 100vh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; overflow: hidden; }
+body.panel main { overflow: auto; }
+/* Pie RESERVADO para la vitrina (se construye aparte). Alto fijo: nunca se empuja fuera de vista. */
+.vitrina { height: 56px; display: flex; align-items: center; justify-content: center; border-top: 1px solid var(--grid);
+  background: var(--cell); color: var(--faint); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Semaforos */
+.sem { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--sem-gris); }
+.sem.verde { background: var(--sem-verde); } .sem.amarillo, .sem.ambar { background: var(--sem-amarillo); }
+.sem.rojo { background: var(--sem-rojo); } .sem.gris { background: var(--sem-gris); }
+.chip-sem { display: inline-flex; gap: 5px; align-items: center; }
+.chip-sem.rojo { color: color-mix(in srgb, var(--sem-rojo) 75%, var(--fg)); font-weight: 600; }
+.chip-sem.amarillo, .chip-sem.ambar { color: color-mix(in srgb, var(--sem-amarillo) 70%, var(--fg)); }
+.chip-sem.gris { color: var(--muted); }
+
+/* Ficha: celdas etiqueta | valor */
 .ficha { display: grid; gap: 10px; }
-.ficha .ruc { display: flex; align-items: center; gap: 8px; color: var(--muted); }
-.ficha .ruc button { padding: 2px 10px; font-size: 12px; }
-.ficha h1 { margin: 0; font-size: 18px; line-height: 1.25; }
-.chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--s2); font-size: 12.5px; }
-.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-.chip.verde::before { background: var(--verde); } .chip.ambar::before { background: var(--ambar); } .chip.rojo::before { background: var(--rojo); }
-.lugar { color: var(--fg2); }
-.alerta { border-radius: 10px; padding: 9px 11px; background: color-mix(in srgb, var(--rojo) 12%, var(--s1));
-  border: 1px solid color-mix(in srgb, var(--rojo) 45%, var(--line)); }
-.alerta b::before { content: "⚠ "; color: var(--rojo); }
-.info { border-radius: 10px; padding: 8px 11px; background: var(--s1); border: 1px solid var(--line); }
-.info b::before { content: "✓ "; color: var(--verde); }
-.alerta small, .info small { display: block; color: var(--muted); }
-.datos-al { color: var(--muted); font-size: 12px; }
+.acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+.celdas { display: grid; grid-template-columns: minmax(96px, 34%) 1fr; border: 1px solid var(--grid); }
+.celdas > div { padding: 6px 9px; border-bottom: 1px solid var(--grid); min-width: 0; overflow-wrap: anywhere; }
+.celdas > div:nth-last-child(-n+2) { border-bottom: 0; }
+.celdas .et { background: var(--cell-2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; border-right: 1px solid var(--grid); }
+.celdas .va { background: var(--cell); }
+.celdas .va.razon { font-weight: 600; }
+.bloque { border: 1px solid var(--grid); }
+.bloque > b { display: block; padding: 5px 9px; background: var(--cell-2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--grid); }
+.linea { padding: 6px 9px; border-bottom: 1px solid var(--grid); background: var(--cell); }
+.linea:last-child { border-bottom: 0; }
+.linea small { display: block; color: var(--muted); }
+.linea.riesgo { background: color-mix(in srgb, var(--sem-rojo) 9%, var(--cell)); }
+.linea.riesgo > span::before { content: "⚠ "; color: var(--sem-rojo); }
+.linea.info > span::before { content: "✓ "; color: var(--sem-verde); }
 
-/* Tabla */
-.barra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.barra label { display: inline-flex; gap: 6px; align-items: center; color: var(--fg2); font-size: 13px; white-space: nowrap; }
+/* Tabla (hoja) */
+.barra { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.barra label { display: inline-flex; gap: 5px; align-items: center; color: var(--muted); white-space: nowrap; }
 .barra .sp { flex: 1; }
-.tabla { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; }
-.tabla th:nth-child(1), .tabla td:nth-child(1) { width: 98px; }
-.tabla td { overflow-wrap: anywhere; }
-.tabla th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); }
-.tabla td { padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tabla { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tabla th, .tabla td { border: 1px solid var(--grid); padding: 5px 6px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.tabla thead th { position: sticky; top: -12px; z-index: 1; background: var(--cell-2); color: var(--muted); font-weight: 500; font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .05em; }
+.tabla tbody td { background: var(--cell); }
+.tabla .n { width: 30px; text-align: center; color: var(--faint); font-family: var(--mono); background: var(--cell-2); font-size: 10.5px; white-space: nowrap; overflow-wrap: normal; padding-inline: 2px; }
+.tabla .c-id { overflow-wrap: break-word; }
+.tabla .c-id .ruc { display: block; font-weight: 600; font-size: 12px; }
+.tabla .c-id .rs { display: block; }
+.tabla .c-est { width: 78px; } .tabla .c-dom { width: 82px; } .tabla .c-acc { width: 30px; padding: 2px; text-align: center; }
 .tabla tr.fila { cursor: pointer; }
-.tabla tr.fila:hover td { background: var(--s1); }
-.tabla .riesgo { color: var(--rojo); }
-.vacio { color: var(--muted); text-align: center; padding: 28px 8px; }
-.vacio b { display: block; color: var(--fg); font-size: 15px; margin-bottom: 4px; }
+.tabla tr.fila:hover td:not(.n) { background: var(--sel); }
+.tabla tr.fila.rojo td:not(.n) { background: color-mix(in srgb, var(--sem-rojo) 9%, var(--cell)); }
+.tabla tr.nofigura td { color: var(--muted); }
+.tabla .riesgos { display: block; margin-top: 2px; color: color-mix(in srgb, var(--sem-rojo) 80%, var(--fg)); font-size: 11px; }
+.tabla .riesgos::before { content: "⚠ "; }
+.tabla .chip-sem { align-items: baseline; } .tabla .chip-sem .sem { transform: translateY(-1px); }
+button.kebab { padding: 2px 6px; border: 1px solid transparent; background: transparent; color: var(--muted); font-size: 15px; line-height: 1; }
+button.kebab:hover, button.kebab[aria-expanded="true"] { border-color: var(--grid); background: var(--cell-2); color: var(--fg); }
+
+/* Menu de acciones de una fila */
+.menu-pop { position: fixed; z-index: 10; min-width: 210px; border: 1px solid var(--grid); background: var(--cell-2); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+.menu-pop button { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--grid); background: transparent; padding: 8px 11px; }
+.menu-pop button:last-child { border-bottom: 0; }
+.menu-pop button:hover, .menu-pop button:focus-visible { background: var(--sel); outline: none; }
+
+/* RUC no validos, aparte */
+.novalidos .linea { color: color-mix(in srgb, var(--sem-rojo) 75%, var(--fg)); font-family: var(--mono); font-size: 12px; }
+.vacio { color: var(--muted); text-align: center; padding: 26px 8px; }
+.vacio b { display: block; color: var(--fg); font-size: 14px; margin-bottom: 4px; }

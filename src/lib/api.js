@@ -4,6 +4,7 @@
 // - La bitacora del servidor no guarda que RUC se consulto; la extension tampoco guarda historial.
 
 export const API = "https://club.perusistemas.pro/api/v1";
+export const SITIO = API.replace(/\/api\/v1$/, "");      // el Verificador ("Ver más") vive en el mismo sitio
 const LOTE = 100;                     // tope del servidor por llamada
 const CACHE_MS = 12 * 3600 * 1000;
 const ESPERA_MAX_S = 5;

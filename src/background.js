@@ -1,6 +1,6 @@
 // Service worker: menu contextual, panel lateral y el UNICO que llama a la API.
 // No lee paginas: el texto seleccionado lo entrega Chrome en el clic del menu.
-import { extraerRucs, motivoSinRuc } from "./lib/ruc.js";
+import { analizarTexto, motivoSinRuc } from "./lib/ruc.js";
 import * as api from "./lib/api.js";
 import { normalizarLlave } from "./lib/llave.js";
 
@@ -13,8 +13,9 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Lo que el panel debe mostrar: un "pedido" en storage.session (el panel lo escucha).
 async function pedir(texto, origen) {
-  const rucs = extraerRucs(texto);
-  await chrome.storage.session.set({ pedido: { rucs, origen, motivo: rucs.length ? null : motivoSinRuc(texto), t: Date.now() } });
+  const { rucs, invalidos } = analizarTexto(texto);       // los rechazados tambien: se muestran, no se omiten
+  await chrome.storage.session.set({ pedido: { rucs, invalidos, origen,
+    motivo: rucs.length || invalidos.length ? null : motivoSinRuc(texto), t: Date.now() } });
 }
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {

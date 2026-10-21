@@ -1,7 +1,7 @@
 // node --test tests/
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rucValido, extraerRucs, motivoSinRuc, fecha, soles, digitoVerificador } from "../src/lib/ruc.js";
+import { rucValido, extraerRucs, motivoSinRuc, fecha, soles, digitoVerificador, analizarTexto, textoInvalido } from "../src/lib/ruc.js";
 
 test("digito verificador como el backend", () => {
   assert.equal(digitoVerificador("1012345678"), 1);        // 10123456781 (Juan Pérez, ficticio)
@@ -33,6 +33,14 @@ test("motivo cuando no hay RUC", () => {
   assert.equal(motivoSinRuc("DNI 12345678"), "dni");
   assert.equal(motivoSinRuc("10123456782"), "digito");
   assert.equal(motivoSinRuc("hola"), "nada");
+});
+
+test("analizarTexto: validos y rechazados con su motivo (no se pierden)", () => {
+  const r = analizarTexto("Prov: 10123456781, 10123456782 (mal digitado), 30123456781 y otra vez 10123456781; tel 987654321");
+  assert.deepEqual(r.rucs, ["10123456781"]);
+  assert.deepEqual(r.invalidos, [{ valor: "10123456782", motivo: "digito" }, { valor: "30123456781", motivo: "prefijo" }]);
+  assert.equal(textoInvalido(r.invalidos[0]), "RUC 10123456782 no válido — no cumple el dígito verificador.");
+  assert.match(textoInvalido(r.invalidos[1]), /no es un RUC/);
 });
 
 test("formatos", () => {

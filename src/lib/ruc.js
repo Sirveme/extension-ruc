@@ -32,6 +32,30 @@ export function extraerRucs(texto, maximo = 500) {
   return out;
 }
 
+// Todo numero suelto de 11 digitos del texto: los RUC validos y los RECHAZADOS con su motivo
+// (para decirlo en vez de omitirlos). motivo: "digito" (no cumple el digito verificador) |
+// "prefijo" (no empieza con 10, 15, 17 o 20).
+export function analizarTexto(texto, maximo = 500) {
+  const limpio = String(texto || "").replace(/[   ]/g, " ");
+  const vistos = new Set();
+  const rucs = [], invalidos = [];
+  for (const m of limpio.matchAll(/(?<!\d)\d{11}(?!\d)/g)) {
+    const v = m[0];
+    if (vistos.has(v)) continue;
+    vistos.add(v);
+    if (rucValido(v)) rucs.push(v);
+    else invalidos.push({ valor: v, motivo: /^(10|15|17|20)/.test(v) ? "digito" : "prefijo" });
+    if (rucs.length + invalidos.length >= maximo) break;
+  }
+  return { rucs, invalidos };
+}
+
+export function textoInvalido(x) {
+  return x.motivo === "digito"
+    ? `RUC ${x.valor} no válido — no cumple el dígito verificador.`
+    : `${x.valor} no es un RUC — un RUC empieza con 10, 15, 17 o 20.`;
+}
+
 // Por que no hay RUC en lo seleccionado: para un mensaje claro en vez de un "no se encontro".
 export function motivoSinRuc(texto) {
   const t = String(texto || "");

@@ -12,8 +12,13 @@ elige: estado, condición de domicilio, ubicación y alertas de riesgo públicas
   sincroniza). Solo la usa el service worker de la extensión; las páginas web no pueden leerla.
 - **Lo ya consultado en la sesión**, para no gastar la cuota dos veces; se borra al cerrar Chrome.
 
+- **Opcional, solo si el usuario lo activa — botón «Ver ficha»:** en los sitios que el usuario elige
+  (o en todos, si así lo decide) la extensión mira **el texto que el usuario selecciona**, en su equipo,
+  para saber si es un RUC y mostrar el botón. No lee el resto de la página. Nada sale del equipo hasta
+  que el usuario toca el botón, y entonces solo se envía ese RUC.
+
 ## Qué NO hace
-- No lee el contenido de las páginas que el usuario visita.
+- No recorre ni guarda el contenido de las páginas que el usuario visita.
 - No registra el historial de navegación ni las URL.
 - No envía datos a terceros ni muestra publicidad.
 - No envía las cookies del navegador con las consultas.
@@ -25,6 +30,10 @@ elige: estado, condición de domicilio, ubicación y alertas de riesgo públicas
 - `sidePanel`: mostrar la ficha junto a la página.
 - `storage`: guardar la llave y la cuota en el equipo, y lo consultado durante la sesión.
 - `https://club.perusistemas.pro/*`: consultar nuestra API de RUC.
+- `scripting`: registrar el botón «Ver ficha» solo cuando el usuario lo activa.
+- Acceso a sitios (`*://*/*`), **opcional**: se pide solo al activar el botón «Ver ficha», para los sitios
+  que el usuario elige; se devuelve al desactivarlo. Sirve únicamente para detectar si lo seleccionado
+  es un RUC.
 
 ## Divulgación de datos (formulario de la tienda)
 - Recopila: ninguno de "información personal", "historial web", "contenido del sitio web" salvo lo

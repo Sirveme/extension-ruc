@@ -5,34 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Configuración · Ficha RUC</title>
 <link rel="stylesheet" href="ui.css">
-<style>main { max-width: 620px; margin: 0 auto; padding: 24px 16px; gap: 16px; } h1 { margin: 0; font-size: 22px; }
-  .caja { background: var(--s1); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 10px; }
-  .fila { display: flex; gap: 8px; flex-wrap: wrap; } ul { margin: 0; padding-left: 18px; color: var(--fg2); }</style>
+<style>main { max-width: 640px; margin: 0 auto; padding: 22px 16px; gap: 14px; } h1 { margin: 0; font-size: 16px; text-transform: uppercase; letter-spacing: .08em; }
+  .caja { border: 1px solid var(--grid); background: var(--cell); display: grid; }
+  .caja > b { padding: 7px 11px; background: var(--cell-2); border-bottom: 1px solid var(--grid); text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; color: var(--muted); }
+  .caja > .cuerpo { padding: 12px 11px; display: grid; gap: 10px; }
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; } ul { margin: 0; padding-left: 18px; }
+  .opcion { display: flex; gap: 8px; align-items: center; } .opcion input { width: auto; accent-color: var(--accent); }
+  .activo { color: var(--sem-verde); font-weight: 600; }</style>
 </head>
 <body>
 <main>
   <h1>Ficha RUC · Configuración</h1>
   <section class="caja" aria-label="Tu llave">
     <b>Tu llave</b>
-    <div id="estado" class="muted">Revisando…</div>
-    <label for="llave" class="muted">Pega tu llave completa: la que te mostró el panel al crearla, con el botón «Copiar» (<span class="mono">psp_live_xxxxxxxx_</span> y un tramo largo). El prefijo corto de la lista no sirve.</label>
-    <input id="llave" type="password" autocomplete="off" spellcheck="false" placeholder="psp_live_…">
-    <div class="fila">
-      <button class="pri" id="guardar">Guardar y validar</button>
-      <button class="sec" id="mostrar" type="button">Mostrar</button>
-      <button class="sec" id="olvidar" type="button" hidden>Olvidar mi llave</button>
+    <div class="cuerpo">
+      <div id="estado" class="muted">Revisando…</div>
+      <label for="llave" class="muted">Pega tu llave completa: la que te mostró el panel al crearla, con el botón «Copiar» (<span class="mono">psp_live_xxxxxxxx_</span> y un tramo largo). El prefijo corto de la lista no sirve.</label>
+      <input id="llave" type="password" autocomplete="off" spellcheck="false" placeholder="psp_live_…">
+      <div class="fila">
+        <button class="pri" id="guardar">Guardar y validar</button>
+        <button class="sec" id="mostrar" type="button">Mostrar</button>
+        <button class="sec" id="olvidar" type="button" hidden>Olvidar mi llave</button>
+      </div>
+      <div id="r" aria-live="polite"></div>
+      <p class="muted" style="margin:0">¿Aún no tienes llave? Escríbenos al WhatsApp <b class="mono">967317946</b>.</p>
     </div>
-    <div id="r" aria-live="polite"></div>
-    <p class="muted" style="margin:0">¿Aún no tienes llave? Escríbenos al WhatsApp <b class="mono">967317946</b>.</p>
+  </section>
+  <section class="caja" aria-label="Botón Ver ficha">
+    <b>Botón «Ver ficha» al seleccionar</b>
+    <div class="cuerpo">
+      <div id="bEstado" class="muted">Revisando…</div>
+      <p class="muted" style="margin:0">Al seleccionar un RUC en una página aparece un botón <b>«Ver ficha»</b>: un clic y ves la ficha, sin el clic derecho. Para eso Chrome te pedirá permiso en los sitios que elijas. La extensión solo mira el texto que tú seleccionas y no envía nada hasta que tocas el botón.</p>
+      <label class="opcion"><input type="radio" name="donde" value="todos" checked> En todos los sitios web</label>
+      <label class="opcion"><input type="radio" name="donde" value="sitios"> Solo en estos sitios (uno por línea)</label>
+      <textarea id="sitios" rows="4" spellcheck="false" placeholder="mail.google.com&#10;outlook.office.com&#10;alerta.pe"></textarea>
+      <div class="fila">
+        <button class="pri" id="bActivar">Activar</button>
+        <button class="sec" id="bApagar" type="button" hidden>Desactivar</button>
+      </div>
+      <div id="rBoton" aria-live="polite"></div>
+      <p class="muted" style="margin:0">En archivos PDF abiertos en Chrome el botón no aparece: Chrome no deja que ninguna extensión lea su visor de PDF. Ahí copia el RUC y pégalo en el ícono de la extensión. El menú del clic derecho sigue funcionando en todas las páginas.</p>
+    </div>
   </section>
   <section class="caja" aria-label="Privacidad">
     <b>Tu privacidad</b>
-    <ul>
-      <li>La extensión <b>no lee las páginas</b> que visitas. Solo usa el texto que tú seleccionas y eliges consultar.</li>
-      <li>Solo envía los RUC que tú pides. No guarda historial; lo ya consultado se recuerda hasta que cierras Chrome, para no gastar tu cuota dos veces.</li>
-      <li>Tu llave queda <b>solo en este equipo</b>: no se sincroniza ni la ven las páginas web.</li>
-      <li>La ficha muestra solo datos públicos del RUC. Nunca buzones ni notificaciones.</li>
-    </ul>
+    <div class="cuerpo">
+      <ul>
+        <li>La extensión <b>no recorre las páginas</b> que visitas. Solo usa el texto que tú seleccionas y eliges consultar.</li>
+        <li>Con el botón «Ver ficha» activado, solo mira lo que seleccionas, en tu equipo, y envía únicamente el RUC cuando tocas el botón.</li>
+        <li>Solo envía los RUC que tú pides. No guarda historial; lo ya consultado se recuerda hasta que cierras Chrome, para no gastar tu cuota dos veces.</li>
+        <li>Tu llave queda <b>solo en este equipo</b>: no se sincroniza ni la ven las páginas web.</li>
+        <li>La ficha muestra solo datos públicos del RUC. Nunca buzones ni notificaciones.</li>
+      </ul>
+    </div>
   </section>
 </main>
 <script type="module" src="options.js"></script>

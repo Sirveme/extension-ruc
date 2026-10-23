@@ -7,6 +7,7 @@ chrome.windows.getCurrent().then(w => { ventana = w.id; });          // antes de
 (async () => {
   const est = await chrome.runtime.sendMessage({ tipo: "cuota" });
   $("sinLlave").hidden = est.tieneLlave;
+  $("sinBoton").hidden = !est.tieneLlave || est.boton;
   if (est.cuota && est.cuota.restante !== null) $("cuota").textContent = `${est.cuota.restante} de ${est.cuota.limite} consultas este mes`;
   $("texto").focus();
 })();

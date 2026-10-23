@@ -22,13 +22,25 @@ Consume la API propia (`https://club.perusistemas.pro/api/v1`) con la llave del 
 | `sidePanel` | Mostrar la ficha al costado de la página. |
 | `storage` | La llave y la cuota (local, este equipo) y lo consultado en la sesión (se borra al cerrar Chrome). |
 | `https://club.perusistemas.pro/*` | Llamar a la API (sin cookies: `credentials: "omit"`). |
+| `scripting` | Registrar el botón «Ver ficha» **solo si la persona lo activa**. Sin advertencia al instalar. |
+| `*://*/*` (**opcional**) | Lo pide Chrome recién al activar el botón «Ver ficha», para todos los sitios o solo los elegidos. Se devuelve al desactivarlo. |
 
-No pide `tabs`, `activeTab`, `scripting` ni acceso a sitios. Ver [PRIVACIDAD.md](PRIVACIDAD.md).
+Al instalar no hay advertencia de "leer tus datos en todos los sitios": no pide `tabs`, `activeTab`
+ni acceso a sitios de entrada. Ver [PRIVACIDAD.md](PRIVACIDAD.md).
+
+## Botón «Ver ficha» al seleccionar (opcional)
+Configuración → *Botón «Ver ficha» al seleccionar* → Activar (todos los sitios o una lista). Al
+seleccionar un texto que **es** un RUC válido aparece un botón discreto junto a la selección; un clic
+abre la ficha. Se va al hacer clic fuera, al perder la selección o a los 6 s. `src/boton.js` solo mira
+la selección, en el equipo, y envía únicamente ese RUC al tocar el botón.
+**Límite de Chrome:** en el visor de PDF nativo ninguna extensión puede leer la selección ni dibujar
+encima: ahí el botón no aparece; se usa el cuadro "pega RUC" del ícono.
 
 ## Estructura
 ```
 manifest.json
-src/background.js     service worker: menú, panel y ÚNICO que llama a la API y lee la llave
+src/background.js     service worker: menú, panel, botón y ÚNICO que llama a la API y lee la llave
+src/boton.js          botón «Ver ficha» (script de contenido, solo si se activa)
 src/lib/api.js        llamadas, errores, cuota, caché de sesión
 src/lib/ruc.js        validación (dígito verificador, igual que el backend) y extracción
 src/sidepanel.*       ficha y tabla
@@ -36,13 +48,14 @@ src/popup.*           pegar RUC
 src/options.*         la llave y el texto de privacidad
 src/ui.css            tema oscuro del Club (nunca blanco)
 icons/                generados con tools/hacer_iconos.py
-tests/ruc.test.mjs    node --test tests/ruc.test.mjs
+tests/                npm test (ruc, llave, boton)
 ```
 
 ## Probar en tu Chrome
 1. `chrome://extensions` → activa **Modo de desarrollador** → **Cargar descomprimida** → elige esta carpeta.
 2. Clic en el ícono → **Configuración** → pega tu llave (créala en `club.perusistemas.pro/panel/llaves`).
 3. En cualquier página, selecciona un RUC → clic derecho → **Ficha RUC**.
+4. Opcional: Configuración → **Botón «Ver ficha» al seleccionar** → Activar. Selecciona un RUC y toca «Ver ficha».
 
 ## Publicar (no listada)
 `python tools/empaquetar.py` arma `dist/ficha-ruc-<versión>.zip` (solo lo que va a la tienda).

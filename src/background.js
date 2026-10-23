@@ -42,6 +42,17 @@ async function registrarBoton(cfg) {
   return { ok: true, activo: true, matches };
 }
 
+// Activacion desde el popup: Chrome puede cerrar el popup al mostrar su pregunta de permiso, y
+// con el su codigo. El popup deja la peticion "pendiente"; al llegar el permiso, se termina aqui.
+chrome.permissions.onAdded.addListener(async () => {
+  const { boton_pendiente: p } = await chrome.storage.local.get("boton_pendiente");
+  if (!p || Date.now() - p.t > 10 * 60 * 1000) return;
+  const cfg = { activo: true, todos: !!p.todos, sitios: p.sitios || [] };
+  const r = await registrarBoton(cfg);
+  await chrome.storage.local.set({ boton: { ...cfg, activo: r.activo } });
+  await chrome.storage.local.remove("boton_pendiente");
+});
+
 // Si la persona quita el permiso desde Chrome, el boton se apaga (y la configuracion lo refleja).
 chrome.permissions.onRemoved.addListener(async () => {
   const { boton } = await chrome.storage.local.get("boton");

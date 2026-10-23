@@ -39,7 +39,7 @@ test("analizarTexto: validos y rechazados con su motivo (no se pierden)", () => 
   const r = analizarTexto("Prov: 10123456781, 10123456782 (mal digitado), 30123456781 y otra vez 10123456781; tel 987654321");
   assert.deepEqual(r.rucs, ["10123456781"]);
   assert.deepEqual(r.invalidos, [{ valor: "10123456782", motivo: "digito" }, { valor: "30123456781", motivo: "prefijo" }]);
-  assert.equal(textoInvalido(r.invalidos[0]), "RUC 10123456782 no válido — no cumple el dígito verificador.");
+  assert.equal(textoInvalido(r.invalidos[0]), "RUC 10123456782 — no válido (no cumple el dígito verificador)");
   assert.match(textoInvalido(r.invalidos[1]), /no es un RUC/);
 });
 

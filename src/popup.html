@@ -4,18 +4,35 @@
 <meta charset="utf-8">
 <title>Ficha RUC</title>
 <link rel="stylesheet" href="ui.css">
-<style>body { width: 340px; } main { gap: 10px; }</style>
+<style>body { width: 340px; } main { gap: 10px; }
+  .etiquetas { display: grid; gap: 5px; }
+  .etiqueta-err { display: block; border: 1px solid color-mix(in srgb, var(--sem-rojo) 55%, var(--grid)); border-left: 3px solid var(--sem-rojo);
+    background: color-mix(in srgb, var(--sem-rojo) 12%, var(--cell)); color: color-mix(in srgb, var(--sem-rojo) 70%, var(--fg));
+    padding: 5px 8px; font: 600 12px var(--mono); }
+  .interruptor { display: flex; align-items: center; gap: 10px; border: 1px solid var(--grid); background: var(--cell); padding: 8px 10px; }
+  .interruptor .txt { flex: 1; display: grid; gap: 1px; }
+  .interruptor .txt b { font-size: 12.5px; } .interruptor .txt small { color: var(--muted); font-size: 11px; }
+  .toggle { position: relative; width: 38px; height: 20px; flex: none; }
+  .toggle input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; width: 100%; height: 100%; }
+  .toggle span { position: absolute; inset: 0; border-radius: 10px; background: var(--cell-2); border: 1px solid var(--grid); transition: background .15s; pointer-events: none; }
+  .toggle span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform .15s, background .15s; }
+  .toggle input:checked + span { background: color-mix(in srgb, var(--accent) 35%, var(--cell-2)); border-color: var(--accent); }
+  .toggle input:checked + span::after { transform: translateX(18px); background: var(--accent); }
+  .toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }</style>
 </head>
 <body>
 <header class="cab"><b>Ficha RUC</b><span class="sp"></span><a href="options.html" target="_blank">Configuración</a></header>
 <main>
   <div id="sinLlave" class="msg" hidden>Configura tu llave para ver fichas. <a href="options.html" target="_blank">Ir a Configuración</a></div>
-  <label for="texto" class="muted">Pega uno o varios RUC (o un texto que los tenga)</label>
-  <textarea id="texto" placeholder="20123456789&#10;10123456781"></textarea>
-  <div id="r" aria-live="polite"></div>
+  <label for="texto" class="muted">Pega o escribe uno o varios RUC (o un texto que los tenga)</label>
+  <textarea id="texto" placeholder="20XXXXXXXXX&#10;10XXXXXXXXX"></textarea>
+  <div id="r" class="etiquetas" aria-live="polite"></div>
   <button class="pri" id="ver">Ver ficha</button>
+  <div class="interruptor">
+    <div class="txt"><b>Botón «Ver ficha» al seleccionar RUC</b><small id="bTxt">Un clic sobre cualquier RUC que selecciones.</small></div>
+    <label class="toggle" title="Activar o desactivar"><input type="checkbox" id="bToggle" role="switch" aria-label="Botón «Ver ficha» al seleccionar RUC"><span></span></label>
+  </div>
   <p class="muted" style="margin:0">En PDF: copia el RUC y pégalo aquí (Chrome no deja leer su visor de PDF).</p>
-  <p class="muted" id="sinBoton" hidden style="margin:0">¿Un solo clic? <a href="options.html" target="_blank">Activa el botón «Ver ficha» al seleccionar</a>.</p>
 </main>
 <footer class="pie"><span id="cuota"></span><span class="sp"></span><span>Nada se consulta sin tu clic</span></footer>
 <script type="module" src="popup.js"></script>

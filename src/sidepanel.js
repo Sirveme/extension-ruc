@@ -28,7 +28,15 @@ const titulo = t => String(t || "").toLowerCase().replace(/(^|[\s-])\S/g, c => c
 function pintarCuota(c) {
   $("cuota").textContent = c && c.restante !== null && c.restante !== undefined ? `${c.restante}/${c.limite} consultas este mes` : "";
 }
-const pintarDatosAl = d => { $("datosAl").textContent = d ? `Datos al ${fecha(d)}` : ""; };
+// Las fechas de corte vienen de la API (nunca fijas aqui): `datos_al` = estado, condicion,
+// domicilio y anexos; `cortes.listas` = las listas publicas (coactiva, retencion...). Si difieren
+// se muestran las dos, cada una con lo suyo.
+const corteListas = (...xs) => (xs.flat().find(x => x && x.cortes && x.cortes.listas) || {}).cortes?.listas || null;
+const pintarDatosAl = (d, listas = null) => {
+  const t = [d && `Datos al ${fecha(d)}`, listas && listas !== d && `listas al ${fecha(listas)}`].filter(Boolean).join(" · ");
+  $("datosAl").textContent = t;
+  $("datosAl").title = listas && listas !== d ? "Estado, condición y domicilio: primera fecha. Listas (coactiva, retención…): segunda." : "";
+};
 
 // --- Riesgo de un resultado ---------------------------------------------------------------
 function riesgos(x) {
@@ -112,7 +120,7 @@ const bloqueNoValidos = inv => inv && inv.length
 // --- Ficha ---------------------------------------------------------------------------------------
 function ficha(x, { volver = null, invalidos = [] } = {}) {
   fx(`RUC ${x.ruc}`);
-  pintarDatosAl(x.datos_al || (lote && lote.datos_al));
+  pintarDatosAl(x.datos_al || (lote && lote.datos_al), corteListas(x, lote ? lote.resultados : []));
   if (!x.encontrado) {
     return limpiar(volver, el("div", { class: "ficha" },
       el("div", { class: "celdas" }, el("div", { class: "et", texto: "RUC" }), el("div", { class: "va mono", texto: x.ruc })),
@@ -157,7 +165,7 @@ function tabla(res, invalidos) {
   const filas = res.resultados.filter(Boolean);
   const conRiesgo = filas.filter(x => riesgos(x).length).length;
   fx(`${filas.length} RUC${invalidos.length ? ` · ${invalidos.length} no válido${invalidos.length === 1 ? "" : "s"}` : ""}`);
-  pintarDatosAl(res.datos_al);
+  pintarDatosAl(res.datos_al, corteListas(res.resultados));
   const soloRiesgo = el("input", { type: "checkbox" });
   const cuerpo = el("tbody");
   const pintar = () => {

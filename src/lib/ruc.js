@@ -52,8 +52,8 @@ export function analizarTexto(texto, maximo = 500) {
 
 export function textoInvalido(x) {
   return x.motivo === "digito"
-    ? `RUC ${x.valor} no válido — no cumple el dígito verificador.`
-    : `${x.valor} no es un RUC — un RUC empieza con 10, 15, 17 o 20.`;
+    ? `RUC ${x.valor} — no válido (no cumple el dígito verificador)`
+    : `${x.valor} — no es un RUC (un RUC empieza con 10, 15, 17 o 20)`;
 }
 
 // Por que no hay RUC en lo seleccionado: para un mensaje claro en vez de un "no se encontro".

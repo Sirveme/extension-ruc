@@ -1,4 +1,5 @@
 import { origenes } from "./lib/sitios.js";
+import { textoDias } from "./lib/acceso.js";
 const $ = id => document.getElementById(id);
 const enviar = m => chrome.runtime.sendMessage(m);
 function aviso(texto, tipo) {
@@ -11,22 +12,35 @@ function cuotaTxt(c) {
   return c && c.restante !== null && c.restante !== undefined ? ` · ${c.restante} de ${c.limite} consultas este mes` : "";
 }
 
-async function estado() {
-  const e = await enviar({ tipo: "estado_llave" });
-  $("estado").textContent = e.tieneLlave ? `Llave guardada: ${e.prefijo}…${cuotaTxt(e.cuota)}` : "Aún no configuras tu llave.";
-  $("olvidar").hidden = !e.tieneLlave;
+let enlaces = {};
+async function estado(forzar = true) {
+  const e = await enviar({ tipo: "acceso", forzar });
+  const a = e.acceso || {};
+  enlaces = e.enlaces || {};
+  $("estado").className = a.tipo === "vencida" ? "" : a.tipo === "permanente" ? "activo" : "muted";
+  $("estado").textContent = !e.tieneAcceso ? ((e.error && e.error.texto) || "Preparando tu prueba gratis…")
+    : a.tipo === "permanente" ? `Acceso del Club activo${cuotaTxt(e.cuota)}.`
+    : a.tipo === "vencida" ? "Tu prueba terminó. Únete al Club de Contadores: es gratis."
+    : `Prueba gratis · ${textoDias(a.dias_restantes)}${cuotaTxt(e.cuota)}. Únete al Club para seguir usándola.`;
+  $("unete").hidden = !e.tieneAcceso || a.tipo === "permanente";
+  $("codigoTxt").hidden = !e.codigo || a.tipo === "permanente";
+  $("codigoTxt").textContent = e.codigo ? `Tu código: ${e.codigo} (va en el mensaje de WhatsApp). Cuando activemos tu acceso, la extensión lo detecta sola.` : "";
 }
+const abrir = url => url && window.open(url, "_blank", "noopener");
+$("bWa").addEventListener("click", () => abrir(enlaces.whatsapp));
+$("bReg").addEventListener("click", () => abrir(enlaces.registro));
+$("bRevisar").addEventListener("click", async () => { aviso("Revisando…"); await estado(true); $("r").replaceChildren(); });
 
 $("guardar").addEventListener("click", async () => {
   const llave = $("llave").value.trim();
-  if (!llave) return aviso("Pega tu llave primero.", "err");
+  if (!llave) return aviso("Pega tu código de acceso primero.", "err");
   $("guardar").disabled = true;
   aviso("Validando…");
   const r = await enviar({ tipo: "guardar_llave", llave });
   $("guardar").disabled = false;
   if (!r.ok) return aviso(r.texto, "err");
   $("llave").value = "";
-  aviso(`Llave válida · plan ${r.plan}${cuotaTxt(r.cuota)}. Ya puedes seleccionar un RUC en cualquier página.`, "ok");
+  aviso(`Acceso válido${cuotaTxt(r.cuota)}. Ya puedes seleccionar un RUC en cualquier página.`, "ok");
   estado();
 });
 $("mostrar").addEventListener("click", () => {
@@ -36,7 +50,7 @@ $("mostrar").addEventListener("click", () => {
 });
 $("olvidar").addEventListener("click", async () => {
   await enviar({ tipo: "olvidar_llave" });
-  aviso("Listo: borramos tu llave y lo consultado de este equipo.", "ok");
+  aviso("Listo: borramos tu acceso y lo consultado de este equipo.", "ok");
   estado();
 });
 estado();

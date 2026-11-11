@@ -12,13 +12,13 @@ export function normalizarLlave(texto) {
   let t = String(texto || "").replace(/\s+/g, "");
   t = t.replace(/^authorization:/i, "").replace(/^bearer/i, "").replace(/^["'`]+|["'`]+$/g, "");
   if (FORMATO.test(t)) return { ok: true, llave: t };
-  if (!t) return { ok: false, motivo: "vacia", texto: "Pega tu llave primero." };
+  // Textos para la persona: NUNCA "llave" (de cara al usuario es su "código de acceso").
+  if (!t) return { ok: false, motivo: "vacia", texto: "Pega tu código de acceso primero." };
   if (PREFIJO.test(t.replace(/[.…]+$/, "")))
     return { ok: false, motivo: "prefijo",
-             texto: "Eso es solo el prefijo de la llave (lo que muestra la lista del panel). La llave completa es más larga: "
-                  + "sigue con otro «_» y un tramo largo, y se muestra una sola vez, al crearla. Si no la guardaste, crea una "
-                  + "nueva en el panel y revoca la anterior." };
+             texto: "Eso es solo el comienzo del código de acceso. El código completo es más largo y se muestra una sola vez, "
+                  + "al crearlo. Si no lo guardaste, pide uno nuevo al Club." };
   if (/^psp_live_/.test(t))
-    return { ok: false, motivo: "incompleta", texto: "La llave parece incompleta: cópiala entera con el botón «Copiar» del panel." };
-  return { ok: false, motivo: "formato", texto: "Esa no es una llave de la API: las llaves empiezan con psp_live_." };
+    return { ok: false, motivo: "incompleta", texto: "El código de acceso parece incompleto: cópialo entero." };
+  return { ok: false, motivo: "formato", texto: "Ese no es un código de acceso del Club." };
 }

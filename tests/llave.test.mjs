@@ -20,7 +20,8 @@ test("solo el prefijo (lo que lista el panel): mensaje exacto", () => {
   for (const p of ["psp_live_1a2b3c4d", "psp_live_1a2b3c4d…", "psp_live_1a2b3c4d..."]) {
     const r = normalizarLlave(p);
     assert.equal(r.ok, false); assert.equal(r.motivo, "prefijo", p);
-    assert.match(r.texto, /solo el prefijo/);
+    assert.match(r.texto, /solo el comienzo/);
+    assert.doesNotMatch(r.texto, /llave|psp_live/i);          // la persona nunca ve la palabra
   }
 });
 

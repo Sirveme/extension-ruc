@@ -9,10 +9,12 @@ import { origenes } from "./lib/sitios.js";
 const MENU = "ficha-ruc";
 const BOTON = "boton-ver-ficha";
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(({ reason }) => {
   chrome.contextMenus.create({ id: MENU, title: "Ficha RUC: «%s» · 1 consulta por RUC", contexts: ["selection"] });
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
+  if (reason === "install") api.revalidar();          // la prueba gratis se pide sola, sin que la persona haga nada
 });
+chrome.runtime.onStartup.addListener(() => { api.revalidar(); });     // detecta si el Club ya activo el acceso
 
 // Lo que el panel debe mostrar: un "pedido" en storage.session (el panel lo escucha).
 async function pedir(texto, origen) {
@@ -67,7 +69,7 @@ chrome.runtime.onMessage.addListener((m, sender, responder) => {
   const desdePagina = !(sender.url && sender.url.startsWith(chrome.runtime.getURL("")));
   if (desdePagina) {
     // Un sitio web (el script del boton) SOLO puede pedir abrir la ficha de un RUC valido.
-    // No recibe nada de vuelta: ni la llave, ni datos, ni acceso a la API.
+    // No recibe nada de vuelta: ni la credencial, ni datos, ni acceso a la API.
     if (m && m.tipo === "ficha_desde_seleccion" && typeof m.ruc === "string" && rucValido(m.ruc) && sender.tab) {
       chrome.sidePanel.open({ windowId: sender.tab.windowId });       // dentro del gesto: sin await antes
       pedir(m.ruc, "boton");
@@ -80,8 +82,10 @@ chrome.runtime.onMessage.addListener((m, sender, responder) => {
       case "costo": return api.costo(m.rucs || []);
       case "cuota": {
         const { boton } = await chrome.storage.local.get("boton");
-        return { cuota: await api.refrescarCuota(), tieneLlave: !!(await api.llave()), boton: !!(boton && boton.activo) };
+        const est = await api.estadoAcceso();
+        return { ...est, cuota: (await api.refrescarCuota()) || est.cuota, boton: !!(boton && boton.activo) };
       }
+      case "acceso": return api.estadoAcceso({ forzar: !!m.forzar });      // al abrirse: re-valida (no consume)
       case "pegar": await pedir(m.texto || "", "pegado"); return { ok: true };
       case "guardar_llave": {
         const n = normalizarLlave(m.llave);
@@ -91,14 +95,10 @@ chrome.runtime.onMessage.addListener((m, sender, responder) => {
         if (v.ok) await chrome.storage.local.set({ llave: clave });
         return v;                                   // nunca devuelve la llave
       }
-      case "olvidar_llave":
-        await chrome.storage.local.remove(["llave", "cuota"]);
+      case "olvidar_llave":                          // la instalacion se conserva: no reinicia la prueba
+        await chrome.storage.local.remove(["llave", "cuota", "acceso", "codigo"]);
         await chrome.storage.session.clear();
         return { ok: true };
-      case "estado_llave": {
-        const clave = await api.llave();
-        return { tieneLlave: !!clave, prefijo: clave ? clave.slice(0, 17) : null, cuota: await api.cuotaActual() };
-      }
       case "boton_estado": {
         const { boton } = await chrome.storage.local.get("boton");
         const cfg = boton || { activo: false, todos: true, sitios: [] };

@@ -6,10 +6,15 @@ elige: estado, condición de domicilio, ubicación y alertas de riesgo públicas
 
 ## Qué datos usa la extensión
 - **El texto que el usuario selecciona y elige consultar** (o que pega en la extensión). De ese
-  texto solo se extraen los números de RUC; solo esos RUC se envían a nuestra API. El resto del
+  texto solo se extraen los números de RUC; solo esos RUC se envían a nuestro servidor. El resto del
   texto no sale del equipo.
-- **La llave de la API del usuario**, guardada solo en su equipo (`chrome.storage.local`, no se
-  sincroniza). Solo la usa el service worker de la extensión; las páginas web no pueden leerla.
+- **Un identificador al azar de esta instalación** (no contiene datos de la persona ni de lo que
+  navega). Al instalarse, la extensión lo envía una sola vez para iniciar la prueba gratis de 15 días,
+  y luego para saber si la prueba sigue vigente o si el acceso ya está activo. En el servidor solo se
+  guarda junto con la fecha de vencimiento de la prueba; de la conexión, solo una huella cifrada de la
+  dirección IP, para limitar cuántas pruebas nuevas se piden por día.
+- **El acceso del usuario**, guardado solo en su equipo (`chrome.storage.local`, no se sincroniza).
+  Solo lo usa el service worker de la extensión; las páginas web no pueden leerlo.
 - **Lo ya consultado en la sesión**, para no gastar la cuota dos veces; se borra al cerrar Chrome.
 
 - **Opcional, solo si el usuario lo activa — botón «Ver ficha»:** en los sitios que el usuario elige
@@ -23,13 +28,15 @@ elige: estado, condición de domicilio, ubicación y alertas de riesgo públicas
 - No envía datos a terceros ni muestra publicidad.
 - No envía las cookies del navegador con las consultas.
 - No muestra buzones ni notificaciones de ningún contribuyente: solo datos públicos del RUC.
-- Nuestro servidor registra cuántas consultas hace cada llave (para la cuota), **nunca qué RUC**.
+- Nuestro servidor registra cuántas consultas hace cada acceso (para la cuota) y cuántas pruebas se
+  inician por día, **nunca qué RUC** se consulta.
 
 ## Justificación de permisos (formulario de la tienda)
 - `contextMenus`: ofrecer "Ficha RUC" sobre el texto seleccionado.
 - `sidePanel`: mostrar la ficha junto a la página.
-- `storage`: guardar la llave y la cuota en el equipo, y lo consultado durante la sesión.
-- `https://club.perusistemas.pro/*`: consultar nuestra API de RUC.
+- `storage`: guardar el acceso, el identificador de la instalación y la cuota en el equipo, y lo
+  consultado durante la sesión.
+- `https://club.perusistemas.pro/*`: iniciar la prueba gratis y consultar nuestro servicio de RUC.
 - `scripting`: registrar el botón «Ver ficha» solo cuando el usuario lo activa.
 - Acceso a sitios (`*://*/*`), **opcional**: se pide solo al activar el botón «Ver ficha», para los sitios
   que el usuario elige; se devuelve al desactivarlo. Sirve únicamente para detectar si lo seleccionado

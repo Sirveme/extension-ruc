@@ -11,24 +11,35 @@
   .caja > .cuerpo { padding: 12px 11px; display: grid; gap: 10px; }
   .fila { display: flex; gap: 8px; flex-wrap: wrap; } ul { margin: 0; padding-left: 18px; }
   .opcion { display: flex; gap: 8px; align-items: center; } .opcion input { width: auto; accent-color: var(--accent); }
-  .activo { color: var(--sem-verde); font-weight: 600; }</style>
+  .activo { color: var(--sem-verde); font-weight: 600; }
+  .avanzado summary { cursor: pointer; font-size: 12px; } .avanzado summary:hover { color: var(--fg); }</style>
 </head>
 <body>
 <main>
   <h1>Ficha RUC · Configuración</h1>
-  <section class="caja" aria-label="Tu llave">
-    <b>Tu llave</b>
+  <section class="caja" aria-label="Tu acceso">
+    <b>Tu acceso</b>
     <div class="cuerpo">
       <div id="estado" class="muted">Revisando…</div>
-      <label for="llave" class="muted">Pega tu llave completa: la que te mostró el panel al crearla, con el botón «Copiar» (<span class="mono">psp_live_xxxxxxxx_</span> y un tramo largo). El prefijo corto de la lista no sirve.</label>
-      <input id="llave" type="password" autocomplete="off" spellcheck="false" placeholder="psp_live_…">
-      <div class="fila">
-        <button class="pri" id="guardar">Guardar y validar</button>
-        <button class="sec" id="mostrar" type="button">Mostrar</button>
-        <button class="sec" id="olvidar" type="button" hidden>Olvidar mi llave</button>
+      <div class="fila" id="unete" hidden>
+        <button class="pri" id="bWa" type="button">Únete por WhatsApp</button>
+        <button class="sec" id="bReg" type="button">Regístrate aquí</button>
+        <button class="sec" id="bRevisar" type="button">Revisar de nuevo</button>
       </div>
+      <p class="muted" id="codigoTxt" style="margin:0" hidden></p>
+      <details class="avanzado">
+        <summary class="muted">Avanzado: ya tengo un código de acceso del Club</summary>
+        <div class="cuerpo" style="padding:10px 0 0">
+          <label for="llave" class="muted">Pega el código de acceso completo que te dio el Club.</label>
+          <input id="llave" type="password" autocomplete="off" spellcheck="false" placeholder="Tu código de acceso">
+          <div class="fila">
+            <button class="pri" id="guardar">Guardar y validar</button>
+            <button class="sec" id="mostrar" type="button">Mostrar</button>
+            <button class="sec" id="olvidar" type="button">Borrar mi acceso de este equipo</button>
+          </div>
+        </div>
+      </details>
       <div id="r" aria-live="polite"></div>
-      <p class="muted" style="margin:0">¿Aún no tienes llave? Escríbenos al WhatsApp <b class="mono">967317946</b>.</p>
     </div>
   </section>
   <section class="caja" aria-label="Botón Ver ficha">
@@ -54,7 +65,7 @@
         <li>La extensión <b>no recorre las páginas</b> que visitas. Solo usa el texto que tú seleccionas y eliges consultar.</li>
         <li>Con el botón «Ver ficha» activado, solo mira lo que seleccionas, en tu equipo, y envía únicamente el RUC cuando tocas el botón.</li>
         <li>Solo envía los RUC que tú pides. No guarda historial; lo ya consultado se recuerda hasta que cierras Chrome, para no gastar tu cuota dos veces.</li>
-        <li>Tu llave queda <b>solo en este equipo</b>: no se sincroniza ni la ven las páginas web.</li>
+        <li>Tu acceso queda <b>solo en este equipo</b>: no se sincroniza ni lo ven las páginas web.</li>
         <li>La ficha muestra solo datos públicos del RUC. Nunca buzones ni notificaciones.</li>
       </ul>
     </div>

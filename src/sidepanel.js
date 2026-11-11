@@ -2,6 +2,7 @@
 // Todo dato de la API se pinta con textContent (nunca como HTML). Sin pistas de la fuente.
 import { fecha, soles, textoInvalido } from "./lib/ruc.js";
 import { SITIO } from "./lib/api.js";
+import { textoDias } from "./lib/acceso.js";
 
 const vista = document.getElementById("vista");
 const $ = id => document.getElementById(id);
@@ -98,13 +99,52 @@ document.addEventListener("click", e => { if (menu && !menu.caja.contains(e.targ
 document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarMenu(); });
 vista.addEventListener("scroll", cerrarMenu);
 
-// --- Estados simples ---------------------------------------------------------------------------
-function sinLlave() {
+// --- Prueba gratis: aviso discreto y muro de registro (sin hablar de llaves) -------------------------
+let est = null;                       // estado del acceso: { acceso: {tipo, dias_restantes}, codigo, enlaces }
+const vencida = () => !!(est && est.acceso && est.acceso.tipo === "vencida");
+
+function pintarAviso() {
+  const a = est && est.acceso;
+  if (!a || a.tipo !== "prueba") return $("aviso").replaceChildren();
+  $("aviso").replaceChildren(el("span", {}, el("b", { texto: "Prueba gratis" }), ` · ${textoDias(a.dias_restantes)}. Únete al Club para seguir usándola.`),
+    el("span", { class: "sp" }), el("button", { texto: "Únete", onclick: () => muro() }));
+}
+
+function muro() {
+  const fin = vencida();
   fx("");
-  limpiar(el("div", { class: "vacio" }, el("b", { texto: "Configura tu llave" }),
-    "Para ver la ficha necesitas tu llave gratuita. Pégala una vez en Configuración y queda guardada en este equipo."),
-    el("div", { class: "acciones" }, el("button", { class: "pri", texto: "Ir a Configuración", onclick: () => chrome.runtime.openOptionsPage() })),
-    el("p", { class: "muted", texto: "¿Aún no tienes llave? Escríbenos al WhatsApp 967317946." }));
+  pintarDatosAl(null);
+  const e = (est && est.enlaces) || {};
+  limpiar(el("section", { class: "muro", "aria-label": "Únete al Club" },
+    el("h2", { texto: fin ? "Tu prueba terminó." : "Únete al Club de Contadores" }),
+    el("p", { texto: fin ? "Únete al Club de Contadores: es gratis. Así sigues viendo la ficha de cualquier RUC."
+                         : "Es gratis: únete y sigue usándola sin interrupciones cuando termine tu prueba." }),
+    el("div", { class: "acciones" },
+      el("button", { class: "pri", texto: "Únete por WhatsApp", onclick: () => abrir(e.whatsapp) }),
+      el("button", { texto: "Regístrate aquí", onclick: () => abrir(e.registro) })),
+    est && est.codigo ? el("p", { class: "muted" }, "Tu código: ", el("span", { class: "codigo", texto: est.codigo }),
+      " · ya va en el mensaje de WhatsApp.") : null,
+    el("p", { class: "muted", texto: "Cuando activemos tu acceso, la extensión lo detecta sola: no tienes que pegar nada." }),
+    el("div", { class: "acciones" },
+      fin ? el("button", { texto: "Ya me uní: revisar de nuevo", onclick: e2 => revisar(e2.currentTarget) })
+          : el("button", { texto: "← Seguir con mi prueba", onclick: () => inicio() }))));
+}
+
+async function revisar(boton) {
+  if (boton) { boton.disabled = true; boton.textContent = "Revisando…"; }
+  est = await enviar({ tipo: "acceso", forzar: true });
+  pintarAviso();
+  if (vencida()) {
+    muro();
+    const b = vista.querySelector(".muro .acciones:last-child button");
+    if (b) { b.textContent = "Aún no está activo · revisar de nuevo"; }
+  } else inicio();
+}
+
+function sinAcceso(texto) {
+  fx("");
+  limpiar(mensaje(texto || "No pudimos iniciar tu prueba gratis en este momento.", "err"),
+    el("div", { class: "acciones" }, el("button", { class: "pri", texto: "Reintentar", onclick: e => revisar(e.currentTarget) })));
 }
 function inicio() {
   fx("");
@@ -230,9 +270,10 @@ async function consultar(rucs, invalidos) {
   const res = await enviar({ tipo: "consultar", rucs });
   pintarCuota(res.cuota);
   if (!res.ok) {
-    if (res.codigo === "sin_llave") return sinLlave();
-    if (res.codigo === "llave_invalida") return limpiar(mensaje(res.texto, "err"),
-      el("div", { class: "acciones" }, el("button", { class: "pri", texto: "Revisar mi llave", onclick: () => chrome.runtime.openOptionsPage() })));
+    if (res.codigo === "prueba_vencida") { est = await enviar({ tipo: "acceso" }); pintarAviso(); return muro(); }
+    if (res.codigo === "sin_acceso" || res.codigo === "acceso_invalido") return sinAcceso(res.texto);
+    if (res.codigo === "reintentar") return limpiar(mensaje(res.texto),
+      el("div", { class: "acciones" }, el("button", { class: "pri", texto: "Volver a intentar", onclick: () => consultar(rucs, invalidos) })));
     return limpiar(mensaje(res.texto, "err"),
       res.codigo === "cuota_agotada" ? el("p", { class: "muted", texto: "¿Necesitas más consultas? Escríbenos al WhatsApp 967317946." }) : null);
   }
@@ -243,9 +284,11 @@ async function atender(p) {
   if (!p || p.t === ultimo) return;
   ultimo = p.t;
   const invalidos = p.invalidos || [];
-  const est = await enviar({ tipo: "cuota" });
+  est = await enviar({ tipo: "cuota" });
   pintarCuota(est.cuota);
-  if (!est.tieneLlave) return sinLlave();
+  pintarAviso();
+  if (!est.tieneAcceso) return sinAcceso(est.error && est.error.texto);
+  if (vencida()) return muro();
   if (!p.rucs.length) {
     pintarDatosAl(null);
     if (invalidos.length) {                                    // solo rechazados: se dicen uno por uno
@@ -280,8 +323,11 @@ chrome.storage.session.onChanged.addListener(ch => { if (ch.pedido) atender(ch.p
   const { pedido } = await chrome.storage.session.get("pedido");
   if (pedido && Date.now() - pedido.t < 60000) atender(pedido);
   else {
-    const est = await enviar({ tipo: "cuota" });
+    est = await enviar({ tipo: "acceso", forzar: true });          // al abrirse: re-valida (no consume)
     pintarCuota(est.cuota);
-    est.tieneLlave ? inicio() : sinLlave();
+    pintarAviso();
+    if (!est.tieneAcceso) sinAcceso(est.error && est.error.texto);
+    else if (vencida()) muro();
+    else inicio();
   }
 })();

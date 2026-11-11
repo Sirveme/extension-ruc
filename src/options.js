@@ -23,6 +23,7 @@ async function estado(forzar = true) {
     : a.tipo === "vencida" ? "Tu prueba terminó. Únete al Club de Contadores: es gratis."
     : `Prueba gratis · ${textoDias(a.dias_restantes)}${cuotaTxt(e.cuota)}. Únete al Club para seguir usándola.`;
   $("unete").hidden = !e.tieneAcceso || a.tipo === "permanente";
+  $("bReg").hidden = !e.registroAbierto;                // solo con el registro del Club abierto
   $("codigoTxt").hidden = !e.codigo || a.tipo === "permanente";
   $("codigoTxt").textContent = e.codigo ? `Tu código: ${e.codigo} (va en el mensaje de WhatsApp). Cuando activemos tu acceso, la extensión lo detecta sola.` : "";
 }

@@ -109,7 +109,7 @@ export async function pedirPrueba() {
   if ((res.status === 200 || res.status === 201) && res.d && res.d.credencial) {
     const acceso = { ...res.d.acceso, visto: Date.now() };
     if (acceso.tipo === "prueba" && acceso.dias_restantes === 0) acceso.tipo = "vencida";
-    await chrome.storage.local.set({ llave: res.d.credencial, codigo: res.d.codigo, acceso });
+    await chrome.storage.local.set({ llave: res.d.credencial, codigo: res.d.codigo, acceso, registro_abierto: !!res.d.registro_abierto });
     return { ok: true, acceso, codigo: res.d.codigo };
   }
   if (res.status === 0) return { ok: false, ...mensaje(res) };
@@ -124,12 +124,12 @@ export async function revalidar() {
   if (res.status === 200) {
     await guardarCuota(res.d.cuota);
     const acceso = { ...(res.d.acceso || { tipo: "permanente" }), visto: Date.now() };
-    await chrome.storage.local.set({ acceso });
+    await chrome.storage.local.set({ acceso, registro_abierto: !!res.d.registro_abierto });
     return { ok: true, acceso };
   }
   if (res.status === 403 && res.d && res.d.error && res.d.error.codigo === "prueba_vencida") {
     const acceso = { tipo: "vencida", visto: Date.now() };
-    await chrome.storage.local.set({ acceso });
+    await chrome.storage.local.set({ acceso, registro_abierto: !!res.d.error.registro_abierto });
     return { ok: true, acceso };
   }
   if (res.status === 401 && (await chrome.storage.local.get("instalacion")).instalacion) return pedirPrueba();
@@ -139,14 +139,16 @@ export async function revalidar() {
 // Lo que muestran el panel, el popup y la configuracion. Re-valida al abrirse (o si el dato es viejo).
 export async function estadoAcceso({ forzar = false } = {}) {
   let { acceso, codigo, llave: clave } = await chrome.storage.local.get(["acceso", "codigo", "llave"]);
+  // «Regístrate aquí» solo con el registro del Club abierto (lo dice el servidor en cada consulta)
   let error = null;
   if (forzar || !clave || !acceso || Date.now() - (acceso.visto || 0) > REVALIDAR_MS) {
     const r = await revalidar();
     if (r.ok) ({ acceso, codigo, llave: clave } = await chrome.storage.local.get(["acceso", "codigo", "llave"]));
     else error = r;
   }
+  const { registro_abierto: registro } = await chrome.storage.local.get("registro_abierto");
   return { tieneAcceso: !!clave, acceso: acceso || null, codigo: codigo || null, cuota: await cuotaActual(),
-           enlaces: enlaces(codigo), error };
+           enlaces: enlaces(codigo), registroAbierto: !!registro, error };
 }
 
 export async function cuotaActual() {

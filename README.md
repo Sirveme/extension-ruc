@@ -19,7 +19,8 @@ persona **nunca la ve**: de cara a ella es «tu prueba» y «tu acceso».
    muestra el muro «Tu prueba terminó. Únete al Club de Contadores: es gratis.» con:
    - **Únete por WhatsApp** → `wa.me/51938246208` con «Hola, quiero unirme al Club de Contadores. Vengo de
      la extensión Ficha RUC. #RUC-EXT · Código K7QM-4XPA» (cae en la bandeja de TeAtiendo).
-   - **Regístrate aquí** → `club.perusistemas.pro/registro?para=contador&sig=/extension/vincular?c=<código>`:
+   - **Regístrate aquí** (solo si el registro del Club está abierto: lo dice el servidor en `registro_abierto`,
+     según `IDENTIDAD_REGISTRO_ABIERTO`; al abrirlo, el botón aparece sin publicar otra versión) → `club.perusistemas.pro/registro?para=contador&sig=/extension/vincular?c=<código>`:
      al terminar el registro, `/extension/vincular` deja anotada la solicitud de esa instalación.
 4. **Activación (manual por ahora)**: Duilio la hace en `/panel/llaves` (botón «Activar acceso
    permanente») o con `python api_llave.py activar K7QM-4XPA`. La extensión re-valida sola con `/yo`

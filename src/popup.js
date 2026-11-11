@@ -38,11 +38,12 @@ function pintarAviso(est) {
   } else if (a && a.tipo === "vencida") {
     caja.hidden = false; caja.className = "msg err";
     caja.replaceChildren(Object.assign(document.createElement("b"), { textContent: "Tu prueba terminó." }),
-      " Únete al Club de Contadores: es gratis. ", link("Únete por WhatsApp", e.whatsapp), " · ", link("Regístrate aquí", e.registro));
+      " Únete al Club de Contadores: es gratis. ", link("Únete por WhatsApp", e.whatsapp),
+      ...(est.registroAbierto ? [" · ", link("Regístrate aquí", e.registro)] : []));
   } else if (a && a.tipo === "prueba") {
     caja.hidden = false; caja.className = "msg";
     caja.replaceChildren(`Prueba gratis · ${textoDias(a.dias_restantes)}. Únete al Club para seguir usándola. `,
-      link("Únete por WhatsApp", e.whatsapp), " · ", link("Regístrate", e.registro));
+      link("Únete por WhatsApp", e.whatsapp), ...(est.registroAbierto ? [" · ", link("Regístrate", e.registro)] : []));
   } else caja.hidden = true;
 }
 

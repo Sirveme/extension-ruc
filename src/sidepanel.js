@@ -121,7 +121,7 @@ function muro() {
                          : "Es gratis: únete y sigue usándola sin interrupciones cuando termine tu prueba." }),
     el("div", { class: "acciones" },
       el("button", { class: "pri", texto: "Únete por WhatsApp", onclick: () => abrir(e.whatsapp) }),
-      el("button", { texto: "Regístrate aquí", onclick: () => abrir(e.registro) })),
+      est && est.registroAbierto ? el("button", { texto: "Regístrate aquí", onclick: () => abrir(e.registro) }) : null),
     est && est.codigo ? el("p", { class: "muted" }, "Tu código: ", el("span", { class: "codigo", texto: est.codigo }),
       " · ya va en el mensaje de WhatsApp.") : null,
     el("p", { class: "muted", texto: "Cuando activemos tu acceso, la extensión lo detecta sola: no tienes que pegar nada." }),

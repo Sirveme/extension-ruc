@@ -1,4 +1,6 @@
-// Boton flotante "Ver ficha" junto a una seleccion que ES un RUC valido.
+// Boton flotante "Ver ficha" junto a una seleccion que ES un RUC valido. Si la seleccion parece un
+// RUC (11 digitos que empiezan con 10, 15, 17 o 20) pero no cumple el digito verificador, en su lugar
+// sale la etiqueta roja "RUC mal escrito": al tocarla, el panel dice el motivo (no consulta nada).
 // Script de contenido: SOLO se registra si la persona lo activa en Configuracion (permiso
 // opcional por sitio o en todos). Privacidad: no recorre la pagina; solo mira el texto que la
 // persona selecciona, localmente, y no envia nada hasta que hace clic (envia SOLO ese RUC).
@@ -26,19 +28,22 @@
     const nums = t.match(/\d+/g) || [];
     if (nums.length !== 1 || nums[0].length !== 11) return null;
     if (/[a-z]/i.test(t.replace(/\bruc\b/i, "").replace(/n[°º.]?/i, ""))) return null;
-    return rucValido(nums[0]) ? nums[0] : null;
+    if (rucValido(nums[0])) return { ruc: nums[0], valido: true };
+    // Parece un RUC (prefijo correcto) pero el digito no cuadra: "mal escrito". Otros 11 digitos
+    // (p. ej. un telefono con 51 delante) no son RUC: no se muestra nada.
+    return /^(10|15|17|20)/.test(nums[0]) ? { ruc: nums[0], valido: false } : null;
   }
 
-  let host = null, reloj = null, rucActual = null;
+  let host = null, reloj = null, rucActual = null, validoActual = true;
   const quitar = () => {
     if (reloj) clearTimeout(reloj);
     reloj = null; rucActual = null;
     if (host) { host.remove(); host = null; }
   };
 
-  function mostrar(ruc, rect) {
+  function mostrar(ruc, valido, rect) {
     quitar();
-    rucActual = ruc;
+    rucActual = ruc; validoActual = valido;
     host = document.createElement("ficha-ruc-boton");
     host.style.cssText = "all: initial; position: absolute; z-index: 2147483647;";
     const raiz = host.attachShadow({ mode: "closed" });
@@ -48,17 +53,21 @@
         border: 1px solid #f0b56a; border-radius: 3px; padding: 6px 10px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
       button:hover { background: #f0b56a; } button:focus-visible { outline: 2px solid #1a110a; outline-offset: 1px; }
       svg { width: 12px; height: 12px; }
-    </style><button type="button" title="Ver la ficha de este RUC (Ficha RUC · Perú Sistemas Pro)">
+      button.mal { background: #e5534b; border-color: #f07a72; color: #1a110a; }
+      button.mal:hover { background: #f07a72; }
+    </style>` + (valido
+      ? `<button type="button" title="Ver la ficha de este RUC (Ficha RUC · Perú Sistemas Pro)">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
-      Ver ficha</button>`;
+      Ver ficha</button>`
+      : `<button type="button" class="mal" title="Este número no cumple el dígito verificador de un RUC (Ficha RUC · Perú Sistemas Pro)">✕ RUC mal escrito</button>`);
     raiz.querySelector("button").addEventListener("click", e => {
       e.preventDefault(); e.stopPropagation();
-      const r = rucActual;
+      const r = rucActual, v = validoActual;
       quitar();
-      chrome.runtime.sendMessage({ tipo: "ficha_desde_seleccion", ruc: r });   // solo el RUC
+      chrome.runtime.sendMessage({ tipo: v ? "ficha_desde_seleccion" : "ruc_mal_escrito", ruc: r });   // solo ese numero
     });
     // Debajo y al final de la seleccion; si no cabe, encima. Coordenadas del documento.
-    const x = Math.min(rect.right + window.scrollX - 4, window.scrollX + document.documentElement.clientWidth - 96);
+    const x = Math.min(rect.right + window.scrollX - 4, window.scrollX + document.documentElement.clientWidth - (valido ? 96 : 140));
     const abajo = rect.bottom + 34 < window.innerHeight;
     host.style.left = Math.max(window.scrollX + 4, x) + "px";
     host.style.top = (abajo ? rect.bottom + window.scrollY + 6 : rect.top + window.scrollY - 32) + "px";
@@ -72,12 +81,12 @@
     espera = setTimeout(() => {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || !sel.rangeCount) { quitar(); return; }
-      const ruc = rucDe(sel.toString());
-      if (!ruc) { quitar(); return; }
-      if (ruc === rucActual && host) return;
+      const r = rucDe(sel.toString());
+      if (!r) { quitar(); return; }
+      if (r.ruc === rucActual && host) return;
       const rect = sel.getRangeAt(0).getBoundingClientRect();
       if (!rect || (!rect.width && !rect.height)) return;
-      mostrar(ruc, rect);
+      mostrar(r.ruc, r.valido, rect);
     }, 180);
   }
   document.addEventListener("selectionchange", revisar);

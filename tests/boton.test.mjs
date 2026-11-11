@@ -25,15 +25,20 @@ test("misma validacion modulo 11 que lib/ruc.js", () => {
   }
 });
 
-test("el boton solo aparece si la seleccion ES un RUC valido", () => {
-  assert.equal(B.rucDe("10123456781"), "10123456781");
-  assert.equal(B.rucDe("  RUC: 10123456781 "), "10123456781");
-  assert.equal(B.rucDe("RUC N° 10123456781."), "10123456781");
-  assert.equal(B.rucDe("10123456782"), null);                       // digito errado
-  assert.equal(B.rucDe("Proveedor Juan Pérez 10123456781"), null);  // texto con un RUC: para eso, el menu
-  assert.equal(B.rucDe("10123456781 y 10112233445"), null);         // dos RUC
-  assert.equal(B.rucDe("987654321"), null);
-  assert.equal(B.rucDe(""), null);
+test("el boton solo aparece si la seleccion ES un RUC (valido o mal escrito)", () => {
+  const ok = r => ({ ruc: r, valido: true }), mal = r => ({ ruc: r, valido: false });
+  const de = t => { const r = B.rucDe(t); return r && { ...r }; };   // objeto del vm -> de este contexto
+  assert.deepEqual(de("10123456781"), ok("10123456781"));
+  assert.deepEqual(de("  RUC: 10123456781 "), ok("10123456781"));
+  assert.deepEqual(de("RUC N° 10123456781."), ok("10123456781"));
+  assert.deepEqual(de("10123456782"), mal("10123456782"));     // digito errado: etiqueta «RUC mal escrito»
+  assert.deepEqual(de("RUC: 20100070971"), mal("20100070971"));
+  assert.equal(de("51987654321"), null);                       // 11 digitos sin prefijo de RUC: nada
+  assert.equal(de("2010007097"), null);                        // 10 digitos: nada
+  assert.equal(de("Proveedor Juan Pérez 10123456781"), null);  // texto con un RUC: para eso, el menu
+  assert.equal(de("10123456781 y 10112233445"), null);         // dos RUC
+  assert.equal(de("987654321"), null);
+  assert.equal(de(""), null);
 });
 
 test("sitios -> patrones de permiso", () => {

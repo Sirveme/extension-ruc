@@ -9,6 +9,13 @@ retención, buen contribuyente…). Si la selección trae varios RUC, muestra un
 Consume la API propia (`https://club.perusistemas.pro/api/v1`). Por detrás usa una llave, pero la
 persona **nunca la ve**: de cara a ella es «tu prueba» y «tu acceso».
 
+## 0.2.2 · UI
+- Botón flotante: si lo seleccionado parece un RUC (empieza con 10, 15, 17 o 20) pero no cumple el dígito
+  verificador, sale la etiqueta roja «✕ RUC mal escrito»; al tocarla, el panel dice el motivo (no consulta
+  ni gasta cuota). Otros números de 11 dígitos (p. ej. un teléfono con 51) siguen sin mostrar nada.
+- Barra de prueba: botón ámbar «Únete gratis al Club» a todo el alto; con 3 días o menos, fondo ámbar suave y
+  «Tu prueba termina en X días. Únete gratis y no pierdas tu acceso». En el muro, «Únete por WhatsApp» a todo el ancho.
+
 ## 0.2.1 · arreglo
 - Si se actualiza la carpeta sin recargar la extensión, Chrome sigue usando el service worker de la versión
   anterior. Antes el panel se trababa en «No pudimos iniciar tu prueba gratis»; ahora sigue consultando con

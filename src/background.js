@@ -74,6 +74,12 @@ chrome.runtime.onMessage.addListener((m, sender, responder) => {
       chrome.sidePanel.open({ windowId: sender.tab.windowId });       // dentro del gesto: sin await antes
       pedir(m.ruc, "boton");
     }
+    // Etiqueta "RUC mal escrito": el panel muestra el motivo (digito verificador). No consulta ni gasta.
+    if (m && m.tipo === "ruc_mal_escrito" && typeof m.ruc === "string" && /^(10|15|17|20)\d{9}$/.test(m.ruc)
+        && !rucValido(m.ruc) && sender.tab) {
+      chrome.sidePanel.open({ windowId: sender.tab.windowId });       // dentro del gesto: sin await antes
+      pedir(m.ruc, "boton");
+    }
     return;
   }
   (async () => {

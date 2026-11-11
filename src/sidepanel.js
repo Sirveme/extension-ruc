@@ -104,10 +104,17 @@ let est = null;                       // estado del acceso: { acceso: {tipo, dia
 const vencida = () => !!(est && est.acceso && est.acceso.tipo === "vencida");
 
 function pintarAviso() {
-  const a = est && est.acceso;
-  if (!a || a.tipo !== "prueba") return $("aviso").replaceChildren();
-  $("aviso").replaceChildren(el("span", {}, el("b", { texto: "Prueba gratis" }), ` · ${textoDias(a.dias_restantes)}. Únete al Club para seguir usándola.`),
-    el("span", { class: "sp" }), el("button", { texto: "Únete", onclick: () => muro() }));
+  const a = est && est.acceso, caja = $("aviso");
+  if (!a || a.tipo !== "prueba") { caja.classList.remove("urgente"); return caja.replaceChildren(); }
+  const d = Number(a.dias_restantes);
+  const urgente = Number.isFinite(d) && d <= 3;                 // 3 dias o menos: la barra se enciende
+  caja.classList.toggle("urgente", urgente);
+  caja.replaceChildren(
+    urgente
+      ? el("span", { class: "txt" }, el("b", { texto: d <= 0 ? "Tu prueba termina hoy." : `Tu prueba termina en ${d} día${d === 1 ? "" : "s"}.` }),
+          " Únete gratis y no pierdas tu acceso")
+      : el("span", { class: "txt" }, el("b", { texto: "Prueba gratis" }), ` · ${textoDias(a.dias_restantes)}.`),
+    el("button", { class: "pri unete", texto: "Únete gratis al Club", onclick: () => muro() }));
 }
 
 function muro() {
@@ -119,8 +126,8 @@ function muro() {
     el("h2", { texto: fin ? "Tu prueba terminó." : "Únete al Club de Contadores" }),
     el("p", { texto: fin ? "Únete al Club de Contadores: es gratis. Así sigues viendo la ficha de cualquier RUC."
                          : "Es gratis: únete y sigue usándola sin interrupciones cuando termine tu prueba." }),
-    el("div", { class: "acciones" },
-      el("button", { class: "pri", texto: "Únete por WhatsApp", onclick: () => abrir(e.whatsapp) }),
+    el("div", { class: "acciones principal" },
+      el("button", { class: "pri grande", texto: "Únete por WhatsApp", onclick: () => abrir(e.whatsapp) }),
       est && est.registroAbierto ? el("button", { texto: "Regístrate aquí", onclick: () => abrir(e.registro) }) : null),
     est && est.codigo ? el("p", { class: "muted" }, "Tu código: ", el("span", { class: "codigo", texto: est.codigo }),
       " · ya va en el mensaje de WhatsApp.") : null,

@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { textoDias } from "../src/lib/acceso.js";
-import { enlaces, WA_CLUB } from "../src/lib/api.js";
+import { enlaces, WA_CLUB, mensaje } from "../src/lib/api.js";
 
 test("días de prueba, en español", () => {
   assert.equal(textoDias(15), "quedan 15 días");
@@ -22,4 +22,11 @@ test("muro de registro: WhatsApp del Club con el origen y el código; registro c
   assert.equal(u.origin + u.pathname, "https://club.perusistemas.pro/registro");
   assert.equal(u.searchParams.get("para"), "contador");
   assert.equal(u.searchParams.get("sig"), "/extension/vincular?c=K7QM-4XPA");
+});
+
+test("tope diario de la prueba: mensaje de hoy, no del mes", () => {
+  const dia = mensaje({ status: 429, d: { error: { codigo: "cuota_agotada", periodo: "dia", reinicio: "2026-11-12", restante: 0 } } });
+  assert.match(dia.texto, /tope de consultas de hoy/);
+  const mes = mensaje({ status: 429, d: { error: { codigo: "cuota_agotada", periodo: "mes", reinicio: "2026-12-01", restante: 0 } } });
+  assert.match(mes.texto, /cuota del mes.*01\/12\/2026/);
 });

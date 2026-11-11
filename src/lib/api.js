@@ -71,6 +71,9 @@ export function mensaje(res) {
   if (res.status === 403 && e.codigo === "prueba_vencida")
     return { codigo: "prueba_vencida", texto: "Tu prueba terminó. Únete al Club de Contadores: es gratis." };
   if (res.status === 403) return { codigo: e.codigo || "acceso_suspendido", texto: "Tu acceso está suspendido. Escríbenos al WhatsApp 967317946." };
+  if (res.status === 429 && e.codigo === "cuota_agotada" && e.periodo === "dia")     // tope diario de la prueba
+    return { codigo: "cuota_agotada", texto: "Llegaste al tope de consultas de hoy. Mañana puedes seguir.",
+             restante: e.restante ?? 0, reinicio: e.reinicio };
   if (res.status === 429 && e.codigo === "cuota_agotada")
     return { codigo: "cuota_agotada", texto: `Llegaste a tu cuota del mes. Se reinicia el ${fechaCorta(e.reinicio)}.`,
              restante: e.restante ?? 0, reinicio: e.reinicio };

@@ -9,6 +9,11 @@ retención, buen contribuyente…). Si la selección trae varios RUC, muestra un
 Consume la API propia (`https://club.perusistemas.pro/api/v1`). Por detrás usa una llave, pero la
 persona **nunca la ve**: de cara a ella es «tu prueba» y «tu acceso».
 
+## 0.2.1 · arreglo
+- Si se actualiza la carpeta sin recargar la extensión, Chrome sigue usando el service worker de la versión
+  anterior. Antes el panel se trababa en «No pudimos iniciar tu prueba gratis»; ahora sigue consultando con
+  el acceso guardado (nunca pide una prueba por eso). Para tener todo lo nuevo: chrome://extensions → ↻.
+
 ## 0.2.0 · 15 días gratis → únete al Club
 1. **Al instalar, sin que la persona haga nada**, el service worker genera un identificador de la
    instalación (`crypto.randomUUID()`, se guarda una vez) y pide `POST /api/v1/prueba`: recibe una

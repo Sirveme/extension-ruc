@@ -2,7 +2,7 @@
 // Todo dato de la API se pinta con textContent (nunca como HTML). Sin pistas de la fuente.
 import { fecha, soles, textoInvalido } from "./lib/ruc.js";
 import { SITIO } from "./lib/api.js";
-import { textoDias } from "./lib/acceso.js";
+import { textoDias, pedirEstado } from "./lib/acceso.js";
 
 const vista = document.getElementById("vista");
 const $ = id => document.getElementById(id);
@@ -132,7 +132,7 @@ function muro() {
 
 async function revisar(boton) {
   if (boton) { boton.disabled = true; boton.textContent = "Revisando…"; }
-  est = await enviar({ tipo: "acceso", forzar: true });
+  est = await pedirEstado(enviar, { tipo: "acceso", forzar: true });
   pintarAviso();
   if (vencida()) {
     muro();
@@ -270,7 +270,7 @@ async function consultar(rucs, invalidos) {
   const res = await enviar({ tipo: "consultar", rucs });
   pintarCuota(res.cuota);
   if (!res.ok) {
-    if (res.codigo === "prueba_vencida") { est = await enviar({ tipo: "acceso" }); pintarAviso(); return muro(); }
+    if (res.codigo === "prueba_vencida") { est = await pedirEstado(enviar, { tipo: "acceso" }); pintarAviso(); return muro(); }
     if (res.codigo === "sin_acceso" || res.codigo === "acceso_invalido") return sinAcceso(res.texto);
     if (res.codigo === "reintentar") return limpiar(mensaje(res.texto),
       el("div", { class: "acciones" }, el("button", { class: "pri", texto: "Volver a intentar", onclick: () => consultar(rucs, invalidos) })));
@@ -284,7 +284,7 @@ async function atender(p) {
   if (!p || p.t === ultimo) return;
   ultimo = p.t;
   const invalidos = p.invalidos || [];
-  est = await enviar({ tipo: "cuota" });
+  est = await pedirEstado(enviar, { tipo: "cuota" });
   pintarCuota(est.cuota);
   pintarAviso();
   if (!est.tieneAcceso) return sinAcceso(est.error && est.error.texto);
@@ -323,7 +323,7 @@ chrome.storage.session.onChanged.addListener(ch => { if (ch.pedido) atender(ch.p
   const { pedido } = await chrome.storage.session.get("pedido");
   if (pedido && Date.now() - pedido.t < 60000) atender(pedido);
   else {
-    est = await enviar({ tipo: "acceso", forzar: true });          // al abrirse: re-valida (no consume)
+    est = await pedirEstado(enviar, { tipo: "acceso", forzar: true });          // al abrirse: re-valida (no consume)
     pintarCuota(est.cuota);
     pintarAviso();
     if (!est.tieneAcceso) sinAcceso(est.error && est.error.texto);

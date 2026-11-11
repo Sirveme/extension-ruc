@@ -1,5 +1,5 @@
 import { origenes } from "./lib/sitios.js";
-import { textoDias } from "./lib/acceso.js";
+import { textoDias, pedirEstado } from "./lib/acceso.js";
 const $ = id => document.getElementById(id);
 const enviar = m => chrome.runtime.sendMessage(m);
 function aviso(texto, tipo) {
@@ -14,7 +14,7 @@ function cuotaTxt(c) {
 
 let enlaces = {};
 async function estado(forzar = true) {
-  const e = await enviar({ tipo: "acceso", forzar });
+  const e = await pedirEstado(enviar, { tipo: "acceso", forzar });
   const a = e.acceso || {};
   enlaces = e.enlaces || {};
   $("estado").className = a.tipo === "vencida" ? "" : a.tipo === "permanente" ? "activo" : "muted";

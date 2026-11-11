@@ -1,6 +1,6 @@
 import { analizarTexto, motivoSinRuc, textoInvalido } from "./lib/ruc.js";
 import { origenes } from "./lib/sitios.js";
-import { textoDias } from "./lib/acceso.js";
+import { textoDias, pedirEstado } from "./lib/acceso.js";
 
 const $ = id => document.getElementById(id);
 const enviar = m => chrome.runtime.sendMessage(m);
@@ -19,7 +19,7 @@ function pintarBoton() {
 }
 
 (async () => {
-  const [est, b] = await Promise.all([enviar({ tipo: "cuota" }), enviar({ tipo: "boton_estado" })]);
+  const [est, b] = await Promise.all([pedirEstado(enviar, { tipo: "cuota" }), enviar({ tipo: "boton_estado" })]);
   boton = b;
   pintarBoton();
   pintarAviso(est);

@@ -9,6 +9,17 @@ retención, buen contribuyente…). Si la selección trae varios RUC, muestra un
 Consume la API propia (`https://club.perusistemas.pro/api/v1`). Por detrás usa una llave, pero la
 persona **nunca la ve**: de cara a ella es «tu prueba» y «tu acceso».
 
+## 0.3.0 · modo reservado y compartir
+- Casilla «Ocultar datos del contribuyente» arriba de la ficha, marcada por defecto y guardada en este equipo
+  (`chrome.storage.local`, clave `reservado`). Marcada: RUC 20••••••565, razón social con la primera palabra y
+  el resto con puntos, domicilio oculto y ubicación solo provincia · departamento. Estado, condición y alertas,
+  completos. Al desmarcar se ve todo al instante, sin consultar. Copiar y compartir respetan la casilla.
+- Compartir: WhatsApp texto, WhatsApp imagen, Correo texto (mailto: con asunto «Ficha RUC», sin el RUC en modo
+  reservado), Correo imagen, Copiar imagen y Descargar PNG. Aviso «Se compartirá con datos ocultos/completos».
+  La imagen se dibuja en el equipo (canvas, `src/lib/imagen.js`), tema oscuro, con firma opcional del contador
+  (Configuración, guardada local) y la línea fija de Ficha RUC. WhatsApp Web y mailto: no aceptan adjuntos: la
+  imagen se copia al portapapeles y se avisa «Imagen copiada, pégala en el chat». Compartir no consume cuota.
+
 ## 0.2.2 · UI
 - Botón flotante: si lo seleccionado parece un RUC (empieza con 10, 15, 17 o 20) pero no cumple el dígito
   verificador, sale la etiqueta roja «✕ RUC mal escrito»; al tocarla, el panel dice el motivo (no consulta

@@ -131,3 +131,18 @@ button.kebab:hover, button.kebab[aria-expanded="true"] { border-color: var(--gri
 .muro h2 { margin: 0; font-size: 15px; line-height: 1.3; }
 .muro p { margin: 0; }
 .muro .codigo { font: 600 13px var(--mono); letter-spacing: .08em; color: var(--fg); }
+
+/* Modo reservado y compartir */
+.reservado { display: flex; gap: 8px; align-items: center; padding: 7px 10px; border: 1px solid var(--grid); background: var(--cell-2);
+  font-size: 12.5px; color: var(--fg); cursor: pointer; user-select: none; }
+.reservado input { width: auto; margin: 0; accent-color: var(--accent); }
+.ficha.reservada .va.oculto { color: var(--faint); letter-spacing: .1em; }
+.compartir { display: grid; gap: 8px; border: 1px solid var(--grid); border-left: 3px solid var(--accent); background: var(--cell); padding: 10px; }
+.compartir .aviso-datos { margin: 0; font-size: 11.5px; }
+.compartir .aviso-datos::before { content: "● "; }
+.compartir .aviso-datos.oculto { color: var(--muted); } .compartir .aviso-datos.oculto::before { color: var(--sem-verde); }
+.compartir .aviso-datos.completo { color: color-mix(in srgb, var(--sem-amarillo) 75%, var(--fg)); } .compartir .aviso-datos.completo::before { color: var(--sem-amarillo); }
+.compartir .opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.compartir .estado-compartir:empty { display: none; }
+.compartir .estado-compartir { font-size: 12px; }
+.compartir .estado-compartir.ok { color: var(--sem-verde); } .compartir .estado-compartir.err { color: var(--sem-rojo); }

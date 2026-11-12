@@ -91,3 +91,26 @@ $("bApagar").addEventListener("click", async () => {
   estadoBoton();
 });
 estadoBoton();
+
+// --- Firma para las imagenes (opcional, solo en este equipo) -----------------------------------
+function avisoFirma(texto, tipo) {
+  const d = document.createElement("div");
+  d.className = "msg " + (tipo || "");
+  d.textContent = texto;
+  $("rFirma").replaceChildren(d);
+}
+chrome.storage.local.get("firma").then(({ firma: f }) => {
+  if (!f) return;
+  $("fNombre").value = f.nombre || ""; $("fCpc").value = f.cpc || ""; $("fTel").value = f.telefono || "";
+});
+$("fGuardar").addEventListener("click", async () => {
+  const f = { nombre: $("fNombre").value.trim().slice(0, 80), cpc: $("fCpc").value.trim().slice(0, 40), telefono: $("fTel").value.trim().slice(0, 40) };
+  if (!f.nombre && !f.cpc && !f.telefono) { await chrome.storage.local.remove("firma"); return avisoFirma("Sin firma: las imágenes salen solo con el pie de Ficha RUC.", "ok"); }
+  await chrome.storage.local.set({ firma: f });
+  avisoFirma("Firma guardada. Saldrá al pie de las imágenes que compartas.", "ok");
+});
+$("fBorrar").addEventListener("click", async () => {
+  await chrome.storage.local.remove("firma");
+  $("fNombre").value = ""; $("fCpc").value = ""; $("fTel").value = "";
+  avisoFirma("Listo: quitamos la firma de este equipo.", "ok");
+});

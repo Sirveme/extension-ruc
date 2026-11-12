@@ -58,6 +58,23 @@
       <p class="muted" style="margin:0">En archivos PDF abiertos en Chrome el botón no aparece: Chrome no deja que ninguna extensión lea su visor de PDF. Ahí copia el RUC y pégalo en el ícono de la extensión. El menú del clic derecho sigue funcionando en todas las páginas.</p>
     </div>
   </section>
+  <section class="caja" aria-label="Firma para las imágenes">
+    <b>Firma para las imágenes que compartes</b>
+    <div class="cuerpo">
+      <p class="muted" style="margin:0">Opcional. Sale al pie de la imagen de la ficha cuando la compartes. Queda solo en este equipo.</p>
+      <label for="fNombre" class="muted">Nombre del contador o estudio</label>
+      <input id="fNombre" maxlength="80" autocomplete="off" placeholder="Juan Pérez García">
+      <label for="fCpc" class="muted">Matrícula CPC</label>
+      <input id="fCpc" maxlength="40" autocomplete="off" placeholder="CPC 12345">
+      <label for="fTel" class="muted">Teléfono</label>
+      <input id="fTel" maxlength="40" autocomplete="off" placeholder="987 654 321">
+      <div class="fila">
+        <button class="pri" id="fGuardar" type="button">Guardar firma</button>
+        <button class="sec" id="fBorrar" type="button">Quitar firma</button>
+      </div>
+      <div id="rFirma" aria-live="polite"></div>
+    </div>
+  </section>
   <section class="caja" aria-label="Privacidad">
     <b>Tu privacidad</b>
     <div class="cuerpo">
@@ -67,6 +84,7 @@
         <li>Solo envía los RUC que tú pides. No guarda historial; lo ya consultado se recuerda hasta que cierras Chrome, para no gastar tu cuota dos veces.</li>
         <li>Tu acceso queda <b>solo en este equipo</b>: no se sincroniza ni lo ven las páginas web.</li>
         <li>La ficha muestra solo datos públicos del RUC. Nunca buzones ni notificaciones.</li>
+        <li>«Ocultar datos del contribuyente» viene marcado: así, lo que ves, copias o compartes sale con el RUC y la razón social parciales y sin domicilio. Las imágenes se arman en tu equipo y compartir no gasta consultas.</li>
       </ul>
     </div>
   </section>

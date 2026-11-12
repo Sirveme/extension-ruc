@@ -3,11 +3,18 @@
 import { fecha, soles, textoInvalido } from "./lib/ruc.js";
 import { SITIO } from "./lib/api.js";
 import { textoDias, pedirEstado } from "./lib/acceso.js";
+import { riesgos, vista as vistaFicha, textoCopiar, enlaceWhatsapp, enlaceCorreo, asuntoCorreo, nombrePng } from "./lib/compartir.js";
+import { imagenFicha } from "./lib/imagen.js";
 
 const vista = document.getElementById("vista");
 const $ = id => document.getElementById(id);
 let ultimo = 0;                       // pedido ya mostrado (para no repetirlo)
 let lote = null;                      // ultima tabla (volver de la ficha a la tabla)
+// Modo reservado: casilla «Ocultar datos del contribuyente». Se guarda en este equipo; al instalar, marcada.
+let reservado = true;
+let fichaActual = null;               // { x, opciones } de la ficha en pantalla (para repintar sin consultar)
+let cajaCompartir = false;            // la caja de compartir sigue abierta al cambiar la casilla
+const preferencias = chrome.storage.local.get("reservado").then(p => { reservado = p.reservado !== false; }).catch(() => {});
 
 const enviar = m => chrome.runtime.sendMessage(m);
 function el(tag, props = {}, ...hijos) {
@@ -24,7 +31,6 @@ function el(tag, props = {}, ...hijos) {
 const limpiar = (...n) => { cerrarMenu(); vista.replaceChildren(...n.flat().filter(x => x !== null && x !== undefined && x !== false)); vista.scrollTop = 0; };
 const mensaje = (texto, tipo = "") => el("div", { class: "msg " + tipo, texto });
 const fx = t => { $("fx").textContent = t || ""; };
-const titulo = t => String(t || "").toLowerCase().replace(/(^|[\s-])\S/g, c => c.toUpperCase());
 
 function pintarCuota(c) {
   $("cuota").textContent = c && c.restante !== null && c.restante !== undefined ? `${c.restante}/${c.limite} consultas este mes` : "";
@@ -39,38 +45,39 @@ const pintarDatosAl = (d, listas = null) => {
   $("datosAl").title = listas && listas !== d ? "Estado, condición y domicilio: primera fecha. Listas (coactiva, retención…): segunda." : "";
 };
 
-// --- Riesgo de un resultado ---------------------------------------------------------------
-function riesgos(x) {
-  if (!x || !x.encontrado) return [];
-  const r = [];
-  if (x.marcas && x.marcas.ssco) r.push("Sin capacidad operativa");
-  if (x.condicion && x.condicion.semaforo === "rojo") r.push(x.condicion.nombre || "No habido");
-  if (x.estado && x.estado.semaforo === "rojo") r.push(x.estado.nombre || "No activo");
-  for (const p of x.listas || []) if (p.tipo === "riesgo") r.push(p.nombre);
-  return r;
-}
 const chip = (s, texto) => el("span", { class: "chip-sem " + ((s && s.semaforo) || "gris") },
   el("s", { class: "sem " + ((s && s.semaforo) || "gris") }), texto || (s && s.nombre) || "—");
 
-// --- Acciones: copiar, compartir por WhatsApp, ver mas en el Verificador -------------------
-function textoCompartir(x, datosAl) {
-  const partes = [`RUC ${x.ruc}`, x.encontrado ? x.razon_social : "No figura en nuestros datos"];
-  if (x.encontrado) partes.push(`${x.estado.nombre} · ${x.condicion.nombre}`);
-  const r = riesgos(x);
-  if (r.length) partes.push("⚠️ " + r.join(", "));
-  const d = datosAl || x.datos_al;
-  return partes.join(" — ") + (d ? ` (datos al ${fecha(d)})` : "");
-}
+// --- Acciones: copiar, compartir, ver mas en el Verificador ----------------------------------------
+// Lo que se copia o comparte respeta la casilla de modo reservado. Nada de esto consulta ni gasta cuota.
+const opcionesCompartir = x => ({ reservado, datosAl: x.datos_al || (lote && lote.datos_al) });
 async function copiar(x, boton) {
-  await navigator.clipboard.writeText(x.encontrado ? `${x.ruc}\t${x.razon_social}` : x.ruc);
+  await navigator.clipboard.writeText(textoCopiar(x, reservado));
   if (boton) { const t = boton.textContent; boton.textContent = "Copiado ✓"; setTimeout(() => (boton.textContent = t), 1400); }
 }
 const abrir = url => window.open(url, "_blank", "noopener");
-const compartir = x => abrir("https://wa.me/?text=" + encodeURIComponent(textoCompartir(x, lote && lote.datos_al)));
+// Tras preparar la imagen (puede tardar un momento), una pestana nueva no depende del bloqueador de ventanas.
+const abrirPestana = url => chrome.tabs.create({ url }).catch(() => abrir(url));
+const abrirCorreo = url => { const a = el("a", { href: url }); document.body.append(a); a.click(); a.remove(); };
+const compartir = x => abrir(enlaceWhatsapp(x, opcionesCompartir(x)));
+async function firma() {
+  try { return (await chrome.storage.local.get("firma")).firma || null; } catch (_) { return null; }
+}
+async function png(x) {
+  return imagenFicha(x, { ...opcionesCompartir(x), firma: await firma() });
+}
+async function copiarImagen(x) {
+  const b = await png(x);
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": b })]);
+}
+async function descargarPng(x) {
+  const a = el("a", { href: URL.createObjectURL(await png(x)), download: nombrePng(x, reservado) });
+  document.body.append(a); a.click(); a.remove();
+}
 const verMas = x => abrir(`${SITIO}/verificador?ruc=${encodeURIComponent(x.ruc)}`);
 const ACCIONES = [
   ["Copiar RUC y razón social", (x, b) => copiar(x, b)],
-  ["Compartir por WhatsApp", x => compartir(x)],
+  ["Compartir por WhatsApp", x => compartir(x)],                        // texto, segun la casilla
   ["Ver más en el Verificador ↗", x => verMas(x)],
 ];
 
@@ -165,8 +172,58 @@ const bloqueNoValidos = inv => inv && inv.length
   : null;
 
 // --- Ficha ---------------------------------------------------------------------------------------
+// Casilla de modo reservado, arriba de la ficha. Cambiarla repinta al instante (sin consultar).
+function casillaReservado() {
+  const c = el("input", { type: "checkbox", id: "reservado" });
+  c.checked = reservado;
+  c.addEventListener("change", () => {
+    reservado = c.checked;
+    chrome.storage.local.set({ reservado }).catch(() => {});
+    if (fichaActual) repintar();
+  });
+  return el("label", { class: "reservado", title: "Oculta RUC, razón social y domicilio en pantalla y en lo que copias o compartes" },
+    c, "Ocultar datos del contribuyente");
+}
+
+// Caja de compartir: 4 opciones + copiar/descargar la imagen. Avisa si sale con datos ocultos o completos.
+function bloqueCompartir(x) {
+  const estado = el("div", { class: "estado-compartir muted", role: "status", "aria-live": "polite" });
+  const decir = (t, tipo = "") => { estado.className = "estado-compartir " + (tipo || "muted"); estado.textContent = t; };
+  const conImagen = (fn, okTexto) => async e => {
+    const b = e.currentTarget; b.disabled = true;
+    try { await fn(); if (okTexto) decir(okTexto, "ok"); }
+    catch (_) { decir("No pudimos preparar la imagen. Usa «Descargar PNG».", "err"); }
+    finally { b.disabled = false; }
+  };
+  const op = opcionesCompartir(x);
+  return el("section", { class: "compartir", "aria-label": "Compartir" },
+    el("p", { class: "aviso-datos " + (reservado ? "oculto" : "completo"),
+      texto: reservado ? "Se compartirá con datos ocultos" : "Se compartirá con datos completos" }),
+    el("div", { class: "opciones" },
+      el("button", { texto: "WhatsApp texto", onclick: () => abrir(enlaceWhatsapp(x, op)) }),
+      el("button", { texto: "WhatsApp imagen", onclick: conImagen(async () => { await copiarImagen(x); abrirPestana("https://web.whatsapp.com/"); },
+        "Imagen copiada, pégala en el chat.") }),
+      el("button", { texto: "Correo texto", onclick: () => abrirCorreo(enlaceCorreo(x, op)) }),
+      el("button", { texto: "Correo imagen", onclick: conImagen(async () => {
+        await copiarImagen(x); abrirCorreo(`mailto:?subject=${encodeURIComponent(asuntoCorreo(x, reservado))}`); },
+        "Imagen copiada, pégala en el correo.") })),
+    el("div", { class: "acciones" },
+      el("button", { texto: "Copiar imagen", onclick: conImagen(() => copiarImagen(x), "Imagen copiada, pégala en el chat.") }),
+      el("button", { texto: "Descargar PNG", onclick: conImagen(() => descargarPng(x), "Imagen descargada.") })),
+    estado);
+}
+
+function repintar() {                                // mismo RUC, misma posicion: sin consultar
+  const arriba = vista.scrollTop;
+  ficha(fichaActual.x, fichaActual.opciones);
+  vista.scrollTop = arriba;
+}
+
 function ficha(x, { volver = null, invalidos = [] } = {}) {
-  fx(`RUC ${x.ruc}`);
+  if (!fichaActual || fichaActual.x !== x) cajaCompartir = false;     // otro RUC: la caja empieza cerrada
+  fichaActual = { x, opciones: { volver, invalidos } };
+  const v = vistaFicha(x, reservado);
+  fx(`RUC ${x.encontrado ? v.ruc : x.ruc}`);
   pintarDatosAl(x.datos_al || (lote && lote.datos_al), corteListas(x, lote ? lote.resultados : []));
   if (!x.encontrado) {
     return limpiar(volver, el("div", { class: "ficha" },
@@ -174,7 +231,6 @@ function ficha(x, { volver = null, invalidos = [] } = {}) {
       mensaje(`El RUC ${x.ruc} es válido, pero no figura en nuestros datos: puede ser muy reciente o tener un dígito cambiado.`)),
       bloqueNoValidos(invalidos));
   }
-  const lugar = [x.distrito, x.provincia, x.departamento].filter(Boolean).map(titulo).join(" · ");
   const fila = (et, va, clase = "") => [el("div", { class: "et", texto: et }), el("div", { class: "va " + clase }, va)];
   const riesgo = [], info = [];
   const s = x.marcas && x.marcas.ssco;
@@ -189,18 +245,23 @@ function ficha(x, { volver = null, invalidos = [] } = {}) {
   if (x.marcas && x.marcas.contador) info.push(el("div", { class: "linea info" }, el("span", { texto: "Contador o estudio contable" })));
   if (x.marcas && x.marcas.negocio_nuevo) info.push(el("div", { class: "linea info" }, el("span", { texto: "Negocio nuevo" }),
     el("small", { texto: `Inscrito el ${fecha(x.marcas.negocio_nuevo.inscrito)}` })));
+  const share = cajaCompartir ? bloqueCompartir(x) : null;
   limpiar(volver,
     invalidos.length ? bloqueNoValidos(invalidos) : null,
-    el("article", { class: "ficha" },
-      el("div", { class: "acciones" }, ACCIONES.map(([t, fn]) => el("button", { texto: t.replace(" RUC y razón social", ""), title: t,
-        onclick: e => fn(x, e.currentTarget) }))),
+    casillaReservado(),
+    el("article", { class: "ficha" + (reservado ? " reservada" : "") },
+      el("div", { class: "acciones" },
+        el("button", { texto: "Copiar", title: "Copiar RUC y razón social", onclick: e => copiar(x, e.currentTarget) }),
+        el("button", { texto: "Compartir", "aria-expanded": String(cajaCompartir), onclick: () => { cajaCompartir = !cajaCompartir; repintar(); } }),
+        el("button", { texto: "Ver más en el Verificador ↗", onclick: () => verMas(x) })),
+      share,
       el("div", { class: "celdas" },
-        fila("RUC", x.ruc, "mono"),
-        fila("Razón social", x.razon_social || "", "razon"),
+        fila("RUC", v.ruc, "mono"),
+        fila("Razón social", v.razon, "razon"),
         fila("Estado del contribuyente", chip(x.estado)),
         fila("Condición del domicilio", chip(x.condicion)),
-        lugar ? fila("Ubicación", lugar) : [],
-        x.domicilio ? fila("Domicilio fiscal", x.domicilio) : [],
+        v.ubicacion ? fila("Ubicación", v.ubicacion) : [],
+        v.domicilio ? fila("Domicilio fiscal", v.domicilio, reservado ? "oculto" : "") : [],
         fila("Locales anexos", String((x.anexos && x.anexos.total) || 0), "mono")),
       riesgo.length ? el("section", { class: "bloque" }, el("b", { texto: "Alertas" }), riesgo) : null,
       info.length ? el("section", { class: "bloque" }, el("b", { texto: "Información" }), info) : null));
@@ -290,6 +351,7 @@ async function consultar(rucs, invalidos) {
 async function atender(p) {
   if (!p || p.t === ultimo) return;
   ultimo = p.t;
+  await preferencias;
   const invalidos = p.invalidos || [];
   est = await pedirEstado(enviar, { tipo: "cuota" });
   pintarCuota(est.cuota);

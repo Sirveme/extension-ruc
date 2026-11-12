@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ficha RUC · Perú Sistemas Pro",
   "short_name": "Ficha RUC",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Selecciona un RUC en cualquier página y mira su ficha pública al costado: estado, condición, distrito y alertas de riesgo.",
   "minimum_chrome_version": "116",
   "permissions": [

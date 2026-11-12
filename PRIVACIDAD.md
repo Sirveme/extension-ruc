@@ -15,6 +15,9 @@ elige: estado, condición de domicilio, ubicación y alertas de riesgo públicas
   dirección IP, para limitar cuántas pruebas nuevas se piden por día.
 - **El acceso del usuario**, guardado solo en su equipo (`chrome.storage.local`, no se sincroniza).
   Solo lo usa el service worker de la extensión; las páginas web no pueden leerlo.
+- **Preferencias, solo en el equipo:** la casilla «Ocultar datos del contribuyente» y la firma opcional
+  (nombre, matrícula CPC, teléfono) para las imágenes. No se envían a ningún servidor. Las imágenes y textos para
+  compartir se arman en el equipo; los envía la persona, a quien elija, con la app que elija.
 - **Lo ya consultado en la sesión**, para no gastar la cuota dos veces; se borra al cerrar Chrome.
 
 - **Opcional, solo si el usuario lo activa — botón «Ver ficha»:** en los sitios que el usuario elige

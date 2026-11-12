@@ -10,11 +10,11 @@ import { origenes } from "../src/lib/sitios.js";
 // Carga boton.js en un entorno minimo y saca sus funciones internas (rucValido, rucDe).
 function cargarBoton() {
   const fuente = readFileSync(new URL("../src/boton.js", import.meta.url), "utf8")
-    .replace("(() => {", "(() => { globalThis.__exponer = () => ({ rucValido, rucDe });");
+    .replace("(() => {", "(() => { globalThis.__exponer = () => ({ rucValido, rucDe, vivo, enviar, caducado, AVISO_VIEJO });");
   const ctx = { window: {}, document: { addEventListener() {} }, chrome: {}, globalThis: null };
   ctx.globalThis = ctx; ctx.window.addEventListener = () => {};
   vm.createContext(ctx); vm.runInContext(fuente, ctx);
-  return ctx.__exponer();
+  return { ...ctx.__exponer(), ctx };
 }
 const B = cargarBoton();
 
@@ -47,4 +47,29 @@ test("sitios -> patrones de permiso", () => {
     ["*://mail.google.com/*", "*://*.mail.google.com/*", "*://outlook.office.com/*", "*://*.outlook.office.com/*", "*://alerta.pe/*", "*://*.alerta.pe/*"]);
   assert.deepEqual(origenes({ todos: false, sitios: ["127.0.0.1"] }), ["*://127.0.0.1/*"]);
   assert.deepEqual(origenes({ todos: false, sitios: [] }), []);
+});
+
+test("contexto invalidado (extension actualizada con la pagina abierta): no lanza, avisa", async () => {
+  const { ctx } = B;
+  ctx.chrome = {};                                              // sin runtime
+  assert.equal(B.vivo(), false);
+  await assert.rejects(B.enviar({ tipo: "vista_rapida", ruc: "20100070970" }), e => B.caducado(e));
+  ctx.chrome = { runtime: {} };                                 // runtime sin id: contexto invalidado
+  assert.equal(B.vivo(), false);
+  await assert.rejects(B.enviar({ tipo: "x" }), e => B.caducado(e));
+  ctx.chrome = { get runtime() { throw new Error("Extension context invalidated."); } };   // hasta leerlo falla
+  assert.equal(B.vivo(), false);
+  // vivo al verificar, pero se invalida justo al enviar
+  ctx.chrome = { runtime: { id: "abc", sendMessage() { throw new Error("Extension context invalidated."); } } };
+  assert.equal(B.vivo(), true);
+  await assert.rejects(B.enviar({ tipo: "x" }), e => B.caducado(e));
+  ctx.chrome = { runtime: { id: "abc", sendMessage: () => Promise.reject(new Error("Extension context invalidated.")) } };
+  await assert.rejects(B.enviar({ tipo: "x" }), e => B.caducado(e));
+  // normal: devuelve la respuesta; otro error no se confunde con contexto invalidado
+  ctx.chrome = { runtime: { id: "abc", sendMessage: m => Promise.resolve({ ok: true, eco: m.tipo }) } };
+  assert.deepEqual({ ...(await B.enviar({ tipo: "vista_rapida" })) }, { ok: true, eco: "vista_rapida" });
+  ctx.chrome = { runtime: { id: "abc", sendMessage: () => Promise.reject(new Error("Could not establish connection")) } };
+  await assert.rejects(B.enviar({ tipo: "x" }), e => !B.caducado(e));
+  assert.equal(B.AVISO_VIEJO, "Ficha RUC se actualizó · recarga la página (F5)");
+  assert.doesNotMatch(B.AVISO_VIEJO, /(llaves?|key|api|token|psp_live)/i);
 });

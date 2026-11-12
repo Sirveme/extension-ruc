@@ -9,6 +9,12 @@ retención, buen contribuyente…). Si la selección trae varios RUC, muestra un
 Consume la API propia (`https://club.perusistemas.pro/api/v1`). Por detrás usa una llave, pero la
 persona **nunca la ve**: de cara a ella es «tu prueba» y «tu acceso».
 
+## 0.4.1 · extensión actualizada con la página abierta
+- Si la extensión se actualiza o se recarga con una página abierta, el botón flotante de esa página queda
+  huérfano (`chrome.runtime.id` ya no existe). Antes de cada envío lo verifica, y el envío va en try/catch
+  por si se invalida en ese momento: en vez de un error, la tarjetita dice en ámbar «Ficha RUC se
+  actualizó · recarga la página (F5)» y el script viejo quita sus listeners para no volver a aparecer.
+
 ## 0.4.0 · tabla reservada, tarjetita y vitrina
 - Modo reservado también en la tabla (casilla arriba), en «Copiar tabla», «Descargar CSV», el menú ⋮, la barra
   fx, la ficha «no figura», los números rechazados (panel y popup) y la etiqueta accesible del ⋮.

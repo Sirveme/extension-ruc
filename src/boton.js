@@ -64,9 +64,10 @@
     .mas { all: initial; box-sizing: border-box; cursor: pointer; font: 700 12px/1 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
       color: #1a110a; background: #e8a04a; border-radius: 3px; padding: 5px 9px; }
     .mas:hover { background: #f0b56a; } .mas:focus-visible { outline: 2px solid #f3eadf; outline-offset: 1px; }
+    .t.aviso { border-left-color: #e3b341; color: #f0c96a; background: linear-gradient(135deg, #2b2213, #1e1711); font-weight: 600; }
   </style>`;
 
-  let host = null, raiz = null, reloj = null, rucActual = null, validoActual = true, fijo = false;
+  let host = null, raiz = null, reloj = null, rucActual = null, validoActual = true, fijo = false, rectActual = null;
   const quitar = () => {
     if (reloj) clearTimeout(reloj);
     reloj = null; rucActual = null; fijo = false;
@@ -75,6 +76,58 @@
   const temporizar = ms => { if (reloj) clearTimeout(reloj); reloj = setTimeout(quitar, ms); };
   const nodo = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto) e.textContent = texto; return e; };
   const sinRobarSeleccion = e => e.preventDefault();               // tocar la tarjeta no deshace la seleccion
+
+  // --- Contexto invalidado -----------------------------------------------------------------------
+  // Si la extension se actualizo o se recargo con la pagina abierta, este script queda huerfano:
+  // chrome.runtime.id desaparece y sendMessage lanza error. No se lanza nada: se avisa en ambar y se
+  // quitan los listeners de este script viejo para que no vuelva a aparecer (la pagina recargada
+  // trae el script nuevo).
+  const AVISO_VIEJO = "Ficha RUC se actualizó · recarga la página (F5)";
+  const vivo = () => { try { return !!(chrome.runtime && chrome.runtime.id); } catch (_) { return false; } };
+  class Caducado extends Error {}
+  const caducado = e => e instanceof Caducado || /context invalidated|extension context/i.test(String((e && e.message) || e || ""));
+  function enviar(mensaje) {
+    if (!vivo()) return Promise.reject(new Caducado());
+    try { return Promise.resolve(chrome.runtime.sendMessage(mensaje)); }      // puede invalidarse justo ahora
+    catch (e) { return Promise.reject(caducado(e) ? new Caducado() : e); }
+  }
+  let apagado = false;
+  function apagar() {                                                // quita los listeners del script viejo
+    if (apagado) return;
+    apagado = true;
+    clearTimeout(espera);
+    document.removeEventListener("selectionchange", revisar);
+    document.removeEventListener("mousedown", alPresionar, true);
+    document.removeEventListener("keydown", alTecla, true);
+    window.removeEventListener("blur", quitar);
+  }
+  function avisarViejo(rect) {
+    apagar();
+    if (!host) {                                                     // la tarjetita ya se habia quitado: se vuelve a poner
+      host = document.createElement("ficha-ruc-boton");
+      host.style.cssText = "all: initial; position: absolute; z-index: 2147483647;";
+      raiz = host.attachShadow({ mode: "closed" });
+      raiz.innerHTML = CSS;
+      (document.body || document.documentElement).append(host);
+    }
+    fijo = true;
+    const t = nodo("div", "t aviso", AVISO_VIEJO); t.setAttribute("role", "alert");
+    t.addEventListener("mousedown", sinRobarSeleccion);
+    t.addEventListener("click", quitar);
+    pintar(t);
+    if (rect) ubicar(rect, 300);
+    temporizar(10000);
+    // se cierra con un clic fuera o Escape, una sola vez: no queda ningun listener puesto
+    const cerrar = e => { if (e.type === "keydown" && e.key !== "Escape") return; quitar(); fin(); };
+    const fin = () => { document.removeEventListener("mousedown", cerrar, true); document.removeEventListener("keydown", cerrar, true); };
+    setTimeout(() => { document.addEventListener("mousedown", cerrar, true); document.addEventListener("keydown", cerrar, true); }, 0);
+    setTimeout(fin, 10500);
+  }
+  // Envia y, si el contexto ya no existe, muestra el aviso. Devuelve la respuesta o undefined.
+  async function enviarOAvisar(mensaje, rect) {
+    try { return { r: await enviar(mensaje) }; }
+    catch (e) { if (caducado(e)) { avisarViejo(rect); return null; } throw e; }
+  }
 
   function ubicar(rect, ancho) {
     const x = Math.min(rect.right + window.scrollX - 4, window.scrollX + document.documentElement.clientWidth - ancho - 6);
@@ -85,7 +138,7 @@
 
   function mostrar(ruc, valido, rect) {
     quitar();
-    rucActual = ruc; validoActual = valido;
+    rucActual = ruc; validoActual = valido; rectActual = rect;
     host = document.createElement("ficha-ruc-boton");
     host.style.cssText = "all: initial; position: absolute; z-index: 2147483647;";
     raiz = host.attachShadow({ mode: "closed" });
@@ -99,7 +152,8 @@
     b.addEventListener("click", e => {
       e.preventDefault(); e.stopPropagation();
       const r = rucActual;
-      if (!validoActual) { quitar(); chrome.runtime.sendMessage({ tipo: "ruc_mal_escrito", ruc: r }); return; }
+      if (!vivo()) return avisarViejo(rect);
+      if (!validoActual) { quitar(); enviarOAvisar({ tipo: "ruc_mal_escrito", ruc: r }, rect).catch(() => {}); return; }
       expandir(r, rect);
     });
     host.addEventListener("mouseenter", () => { if (reloj) clearTimeout(reloj); });
@@ -115,8 +169,10 @@
     b.addEventListener("mousedown", sinRobarSeleccion);
     b.addEventListener("click", e => {
       e.preventDefault(); e.stopPropagation();
+      const rect = rectActual;
+      if (!vivo()) return avisarViejo(rect);
       quitar();
-      chrome.runtime.sendMessage({ tipo: "ficha_desde_seleccion", ruc });        // panel: usa lo ya consultado
+      enviarOAvisar({ tipo: "ficha_desde_seleccion", ruc }, rect).catch(() => {});   // panel: usa lo ya consultado
     });
     return b;
   }
@@ -136,8 +192,11 @@
     ubicar(rect, 240);
     temporizar(20000);
     let d;
-    try { d = await chrome.runtime.sendMessage({ tipo: "vista_rapida", ruc }); }
-    catch (_) { d = { ok: false, texto: "Recarga la página para usar la extensión." }; }
+    try {
+      const x = await enviarOAvisar({ tipo: "vista_rapida", ruc }, rect);
+      if (!x) return;                                                // contexto invalidado: ya se aviso
+      d = x.r;
+    } catch (_) { d = { ok: false, texto: "No pudimos consultar." }; }
     if (!host || rucActual !== ruc) return;                         // se cerro o cambio la seleccion
     const c = nodo("div", "t"); c.setAttribute("role", "status");
     c.addEventListener("mousedown", sinRobarSeleccion);
@@ -174,8 +233,10 @@
       mostrar(r.ruc, r.valido, rect);
     }, 180);
   }
+  function alPresionar(e) { if (host && e.target !== host) quitar(); }
+  function alTecla(e) { if (e.key === "Escape") quitar(); }
   document.addEventListener("selectionchange", revisar);
-  document.addEventListener("mousedown", e => { if (host && e.target !== host) quitar(); }, true);
-  document.addEventListener("keydown", e => { if (e.key === "Escape") quitar(); }, true);
+  document.addEventListener("mousedown", alPresionar, true);
+  document.addEventListener("keydown", alTecla, true);
   window.addEventListener("blur", quitar);
 })();

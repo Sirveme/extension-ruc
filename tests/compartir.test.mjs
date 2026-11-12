@@ -70,3 +70,17 @@ test("textos sin palabras prohibidas", () => {
   for (const t of [textoFicha(X, { reservado: true }), textoFicha(X, { reservado: false }), PIE_FUENTE])
     assert.doesNotMatch(t, /\b(llaves?|key|api|token|psp_live)\b/i);
 });
+
+test("tabla (copiar/CSV) y números rechazados respetan la casilla", async () => {
+  const { filasTabla, invalidoVisible } = await import("../src/lib/compartir.js");
+  const nf = { ruc: "20100070970", encontrado: false };
+  const [cab, r1, r2] = filasTabla([X, nf], true);
+  assert.equal(cab.length, 9);
+  assert.deepEqual(r1.slice(0, 7), ["20••••••565", "BANCO •• •• ••••••", "ACTIVO", "NO HABIDO", OCULTO, "LIMA", "LIMA"]);
+  assert.equal(r2[0], "20••••••970");
+  const todo = filasTabla([X, nf], false);
+  assert.equal(todo[1][0], "20123456565"); assert.equal(todo[1][4], "SAN ISIDRO"); assert.equal(todo[2][0], "20100070970");
+  assert.doesNotMatch(JSON.stringify(filasTabla([X, nf], true)), /20123456565|20100070970|NACION|SAN ISIDRO/);
+  assert.deepEqual(invalidoVisible({ valor: "20100070971", motivo: "digito" }, true), { valor: "20••••••971", motivo: "digito" });
+  assert.deepEqual(invalidoVisible({ valor: "20100070971", motivo: "digito" }, false), { valor: "20100070971", motivo: "digito" });
+});

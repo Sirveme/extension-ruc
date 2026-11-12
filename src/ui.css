@@ -146,3 +146,39 @@ button.kebab:hover, button.kebab[aria-expanded="true"] { border-color: var(--gri
 .compartir .estado-compartir:empty { display: none; }
 .compartir .estado-compartir { font-size: 12px; }
 .compartir .estado-compartir.ok { color: var(--sem-verde); } .compartir .estado-compartir.err { color: var(--sem-rojo); }
+
+/* Vitrina al pie de la ficha y de la tabla: tarjetas de colores que rotan (los colores vivos solo aqui). */
+.vitrina.viva { height: 84px; display: block; position: relative; overflow: hidden; padding: 0; background: var(--bg);
+  color: #fdf6ee; text-transform: none; letter-spacing: normal; font-size: 12.5px; }
+.vitrina .pista { position: absolute; inset: 0; }
+.vitrina .tarjeta { position: absolute; inset: 0; display: flex; align-items: center; gap: 12px; padding: 8px 40px 16px;
+  opacity: 0; transform: translateX(100%); transition: transform .6s cubic-bezier(.2, .7, .2, 1), opacity .6s ease; }
+.vitrina .tarjeta.activa { opacity: 1; transform: none; }
+.vitrina .pista[data-modo="desliza"] .tarjeta.entra { transform: translateX(100%); transition: none; }
+.vitrina .pista[data-modo="desliza"] .tarjeta.sale { transform: translateX(-100%); opacity: 0; }
+.vitrina .pista[data-modo="sube"] .tarjeta.entra { transform: translateY(100%); transition: none; }
+.vitrina .pista[data-modo="sube"] .tarjeta.sale { transform: translateY(-100%); opacity: 0; }
+.vitrina .emoji { font-size: 30px; line-height: 1; flex: none; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3)); }
+.vitrina .emoji.rebote { animation: vitrina-rebote 1.8s ease-in-out infinite; }
+.vitrina .emoji.latido { animation: vitrina-latido 1.6s ease-in-out infinite; }
+@keyframes vitrina-rebote { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes vitrina-latido { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.13); } }
+.vitrina .txt { display: grid; gap: 1px; min-width: 0; flex: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+.vitrina .txt b { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vitrina .txt span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.vitrina button.ir { flex: none; border: 0; border-radius: 999px; padding: 7px 12px; background: rgba(21, 16, 11, .82); color: var(--fg);
+  font-weight: 600; white-space: nowrap; }
+.vitrina button.ir:hover { background: rgba(21, 16, 11, .95); }
+.vitrina button.flecha { position: absolute; top: calc(50% - 4px); transform: translateY(-50%); width: 26px; height: 26px; padding: 0; border: 0;
+  border-radius: 50%; background: rgba(21, 16, 11, .4); color: #fdf6ee; font-size: 17px; line-height: 1; z-index: 2; }
+.vitrina button.flecha:hover { background: rgba(21, 16, 11, .7); }
+.vitrina button.flecha.izq { left: 7px; } .vitrina button.flecha.der { right: 7px; }
+.vitrina .puntos { position: absolute; left: 0; right: 0; bottom: 5px; display: flex; justify-content: center; gap: 5px; z-index: 2; }
+.vitrina button.punto { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 4px; background: rgba(253, 246, 238, .45);
+  transition: width .3s ease, background .3s ease; }
+.vitrina button.punto.activo { width: 16px; background: #fdf6ee; }
+.vitrina button:focus-visible { outline: 2px solid #fdf6ee; outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) {
+  .vitrina .tarjeta, .vitrina button.punto { transition: none !important; }
+  .vitrina .emoji { animation: none !important; }
+}

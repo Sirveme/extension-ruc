@@ -9,6 +9,16 @@ retención, buen contribuyente…). Si la selección trae varios RUC, muestra un
 Consume la API propia (`https://club.perusistemas.pro/api/v1`). Por detrás usa una llave, pero la
 persona **nunca la ve**: de cara a ella es «tu prueba» y «tu acceso».
 
+## 0.4.0 · tabla reservada, tarjetita y vitrina
+- Modo reservado también en la tabla (casilla arriba), en «Copiar tabla», «Descargar CSV», el menú ⋮, la barra
+  fx, la ficha «no figura», los números rechazados (panel y popup) y la etiqueta accesible del ⋮.
+- Botón flotante: «Ver ficha» no consulta; al tocarlo consulta ese RUC (1 consulta) y se expande ahí mismo:
+  ● Activo · ● Habido · Ver +, con la alerta principal en rojo. «Ver +» abre el panel (ya en caché: no cobra).
+- Vitrina al pie de la ficha y de la tabla (no en el muro): tarjetas de colores que rotan cada 5 s (desliza /
+  sube, alternando), pausa con el mouse, puntos y flechas, `prefers-reduced-motion`. Contenido del servidor
+  (`GET /api/v1/vitrina`, solo datos) o el incluido en `src/lib/vitrina.js`. El botón pasa por
+  `/api/v1/vitrina/ir/{id}`, que cuenta el clic por tarjeta y día y redirige con `?ref=ficha-ruc`.
+
 ## 0.3.0 · modo reservado y compartir
 - Casilla «Ocultar datos del contribuyente» arriba de la ficha, marcada por defecto y guardada en este equipo
   (`chrome.storage.local`, clave `reservado`). Marcada: RUC 20••••••565, razón social con la primera palabra y

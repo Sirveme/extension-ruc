@@ -3,8 +3,10 @@
 import { fecha, soles, textoInvalido } from "./lib/ruc.js";
 import { SITIO } from "./lib/api.js";
 import { textoDias, pedirEstado } from "./lib/acceso.js";
-import { riesgos, vista as vistaFicha, textoCopiar, enlaceWhatsapp, enlaceCorreo, asuntoCorreo, nombrePng } from "./lib/compartir.js";
+import { riesgos, vista as vistaFicha, textoCopiar, enlaceWhatsapp, enlaceCorreo, asuntoCorreo, nombrePng, ocultarRuc,
+         filasTabla, invalidoVisible } from "./lib/compartir.js";
 import { imagenFicha } from "./lib/imagen.js";
+import { montarVitrina } from "./lib/vitrina.js";
 
 const vista = document.getElementById("vista");
 const $ = id => document.getElementById(id);
@@ -14,6 +16,9 @@ let lote = null;                      // ultima tabla (volver de la ficha a la t
 let reservado = true;
 let fichaActual = null;               // { x, opciones } de la ficha en pantalla (para repintar sin consultar)
 let cajaCompartir = false;            // la caja de compartir sigue abierta al cambiar la casilla
+let repintarVista = null;             // ficha o tabla en pantalla: se repinta al cambiar la casilla (sin consultar)
+let filtroRiesgo = false;             // «Solo con riesgo» de la tabla (se conserva al repintar)
+const rucVisible = r => (reservado ? ocultarRuc(r) : r);
 const preferencias = chrome.storage.local.get("reservado").then(p => { reservado = p.reservado !== false; }).catch(() => {});
 
 const enviar = m => chrome.runtime.sendMessage(m);
@@ -28,7 +33,7 @@ function el(tag, props = {}, ...hijos) {
   for (const h of hijos.flat()) if (h !== null && h !== undefined && h !== false && h !== "") e.append(h);
   return e;
 }
-const limpiar = (...n) => { cerrarMenu(); vista.replaceChildren(...n.flat().filter(x => x !== null && x !== undefined && x !== false)); vista.scrollTop = 0; };
+const limpiar = (...n) => { cerrarMenu(); repintarVista = null; mostrarVitrina(false); vista.replaceChildren(...n.flat().filter(x => x !== null && x !== undefined && x !== false)); vista.scrollTop = 0; };
 const mensaje = (texto, tipo = "") => el("div", { class: "msg " + tipo, texto });
 const fx = t => { $("fx").textContent = t || ""; };
 
@@ -168,18 +173,18 @@ function inicio() {
 }
 const bloqueNoValidos = inv => inv && inv.length
   ? el("section", { class: "bloque novalidos", "aria-label": "No válidos" }, el("b", { texto: `No válidos (${inv.length})` }),
-      inv.map(x => el("div", { class: "linea", texto: textoInvalido(x) })))
+      inv.map(x => el("div", { class: "linea", texto: textoInvalido(invalidoVisible(x, reservado)) })))
   : null;
 
 // --- Ficha ---------------------------------------------------------------------------------------
-// Casilla de modo reservado, arriba de la ficha. Cambiarla repinta al instante (sin consultar).
+// Casilla de modo reservado, arriba de la ficha y de la tabla. Cambiarla repinta al instante (sin consultar).
 function casillaReservado() {
   const c = el("input", { type: "checkbox", id: "reservado" });
   c.checked = reservado;
   c.addEventListener("change", () => {
     reservado = c.checked;
     chrome.storage.local.set({ reservado }).catch(() => {});
-    if (fichaActual) repintar();
+    if (repintarVista) repintarVista();
   });
   return el("label", { class: "reservado", title: "Oculta RUC, razón social y domicilio en pantalla y en lo que copias o compartes" },
     c, "Ocultar datos del contribuyente");
@@ -223,13 +228,15 @@ function ficha(x, { volver = null, invalidos = [] } = {}) {
   if (!fichaActual || fichaActual.x !== x) cajaCompartir = false;     // otro RUC: la caja empieza cerrada
   fichaActual = { x, opciones: { volver, invalidos } };
   const v = vistaFicha(x, reservado);
-  fx(`RUC ${x.encontrado ? v.ruc : x.ruc}`);
+  fx(`RUC ${v.ruc}`);
   pintarDatosAl(x.datos_al || (lote && lote.datos_al), corteListas(x, lote ? lote.resultados : []));
   if (!x.encontrado) {
-    return limpiar(volver, el("div", { class: "ficha" },
-      el("div", { class: "celdas" }, el("div", { class: "et", texto: "RUC" }), el("div", { class: "va mono", texto: x.ruc })),
-      mensaje(`El RUC ${x.ruc} es válido, pero no figura en nuestros datos: puede ser muy reciente o tener un dígito cambiado.`)),
+    limpiar(volver, casillaReservado(), el("div", { class: "ficha" },
+      el("div", { class: "celdas" }, el("div", { class: "et", texto: "RUC" }), el("div", { class: "va mono", texto: v.ruc })),
+      mensaje(`El RUC ${v.ruc} es válido, pero no figura en nuestros datos: puede ser muy reciente o tener un dígito cambiado.`)),
       bloqueNoValidos(invalidos));
+    repintarVista = repintar;
+    return mostrarVitrina(true);
   }
   const fila = (et, va, clase = "") => [el("div", { class: "et", texto: et }), el("div", { class: "va " + clase }, va)];
   const riesgo = [], info = [];
@@ -265,29 +272,34 @@ function ficha(x, { volver = null, invalidos = [] } = {}) {
         fila("Locales anexos", String((x.anexos && x.anexos.total) || 0), "mono")),
       riesgo.length ? el("section", { class: "bloque" }, el("b", { texto: "Alertas" }), riesgo) : null,
       info.length ? el("section", { class: "bloque" }, el("b", { texto: "Información" }), info) : null));
+  repintarVista = repintar;
+  mostrarVitrina(true);
 }
 
 // --- Tabla -----------------------------------------------------------------------------------------
 function tabla(res, invalidos) {
+  if (!lote || lote.resultados !== res.resultados) filtroRiesgo = false;      // otra tabla: sin filtro
   lote = { ...res, invalidos };
   const filas = res.resultados.filter(Boolean);
   const conRiesgo = filas.filter(x => riesgos(x).length).length;
   fx(`${filas.length} RUC${invalidos.length ? ` · ${invalidos.length} no válido${invalidos.length === 1 ? "" : "s"}` : ""}`);
   pintarDatosAl(res.datos_al, corteListas(res.resultados));
   const soloRiesgo = el("input", { type: "checkbox" });
+  soloRiesgo.checked = filtroRiesgo;
   const cuerpo = el("tbody");
   const pintar = () => {
     cerrarMenu();
     const ver = filas.filter(x => !soloRiesgo.checked || riesgos(x).length);
     cuerpo.replaceChildren(...ver.map((x, i) => {
       const r = riesgos(x);
-      const kebab = el("button", { class: "kebab", texto: "⋮", title: "Acciones", "aria-label": `Acciones de ${x.ruc}`, "aria-haspopup": "menu",
+      const v = vistaFicha(x, reservado);
+      const kebab = el("button", { class: "kebab", texto: "⋮", title: "Acciones", "aria-label": `Acciones de ${v.ruc}`, "aria-haspopup": "menu",
         "aria-expanded": "false", onclick: e => { e.stopPropagation(); abrirMenu(x, e.currentTarget); } });
       return el("tr", { class: "fila" + (r.length ? " rojo" : "") + (x.encontrado ? "" : " nofigura"), tabindex: "0", title: "Ver ficha",
           onclick: () => abrirDesdeTabla(x), onkeydown: e => e.key === "Enter" && e.target === e.currentTarget && abrirDesdeTabla(x) },
         el("td", { class: "n", texto: String(i + 1) }),
-        el("td", { class: "c-id" }, el("b", { class: "mono ruc", texto: x.ruc }),
-          el("span", { class: "rs", texto: x.encontrado ? x.razon_social : "No figura en nuestros datos" }),
+        el("td", { class: "c-id" }, el("b", { class: "mono ruc", texto: v.ruc }),
+          el("span", { class: "rs", texto: x.encontrado ? v.razon : "No figura en nuestros datos" }),
           r.length ? el("span", { class: "riesgos", texto: r.join(" · ") }) : null),
         el("td", { class: "c-est" }, x.encontrado ? chip(x.estado) : "—"),
         el("td", { class: "c-dom" }, x.encontrado ? chip(x.condicion) : "—"),
@@ -295,8 +307,9 @@ function tabla(res, invalidos) {
     }));
     if (!ver.length) cuerpo.replaceChildren(el("tr", {}, el("td", { colspan: "5", class: "vacio", texto: "Ninguno con riesgo." })));
   };
-  soloRiesgo.addEventListener("change", pintar);
+  soloRiesgo.addEventListener("change", () => { filtroRiesgo = soloRiesgo.checked; pintar(); });
   limpiar(
+    casillaReservado(),
     el("div", { class: "barra" },
       el("b", { texto: `${filas.length} RUC` }), el("span", { class: "muted", texto: conRiesgo ? `· ${conRiesgo} con riesgo` : "· ninguno con riesgo" }),
       el("span", { class: "sp" }), el("label", {}, soloRiesgo, "Solo con riesgo")),
@@ -309,17 +322,15 @@ function tabla(res, invalidos) {
       cuerpo),
     bloqueNoValidos(invalidos));
   pintar();
+  repintarVista = () => { const arriba = vista.scrollTop; tabla(lote, lote.invalidos); vista.scrollTop = arriba; };
+  mostrarVitrina(true);
 }
 
 function abrirDesdeTabla(x) {
   ficha(x, { volver: el("div", { class: "acciones" }, el("button", { texto: "← Volver a la tabla", onclick: () => tabla(lote, lote.invalidos) })) });
 }
 
-const filasPlanas = filas => [["RUC", "Razón social", "Estado del contribuyente", "Condición del domicilio", "Distrito", "Provincia", "Departamento", "Riesgo", "Listas"],
-  ...filas.map(x => x.encontrado
-    ? [x.ruc, x.razon_social, x.estado.nombre, x.condicion.nombre, x.distrito || "", x.provincia || "", x.departamento || "",
-       riesgos(x).join("; "), (x.listas || []).map(p => p.nombre).join("; ")]
-    : [x.ruc, "No figura en nuestros datos", "", "", "", "", "", "", ""])];
+const filasPlanas = filas => filasTabla(filas, reservado);          // copiar y CSV respetan la casilla
 
 async function copiarTabla(filas, boton) {
   await navigator.clipboard.writeText(filasPlanas(filas).map(f => f.join("\t")).join("\n"));
@@ -333,7 +344,7 @@ function descargarCsv(filas) {
 
 // --- Pedido -> confirmar costo -> consultar -> mostrar ---------------------------------------------
 async function consultar(rucs, invalidos) {
-  fx(rucs.length > 1 ? `${rucs.length} RUC` : `RUC ${rucs[0]}`);
+  fx(rucs.length > 1 ? `${rucs.length} RUC` : `RUC ${rucVisible(rucs[0])}`);
   limpiar(el("div", { class: "vacio", texto: rucs.length > 1 ? `Consultando ${rucs.length} RUC…` : "Consultando…" }));
   const res = await enviar({ tipo: "consultar", rucs });
   pintarCuota(res.cuota);
@@ -361,7 +372,7 @@ async function atender(p) {
   if (!p.rucs.length) {
     pintarDatosAl(null);
     if (invalidos.length) {                                    // solo rechazados: se dicen uno por uno
-      fx(invalidos.length === 1 ? invalidos[0].valor : `${invalidos.length} números`);
+      fx(invalidos.length === 1 ? rucVisible(invalidos[0].valor) : `${invalidos.length} números`);
       return limpiar(bloqueNoValidos(invalidos), el("p", { class: "muted", texto: "Revisa los dígitos y vuelve a intentar." }));
     }
     fx("");
@@ -387,6 +398,29 @@ async function atender(p) {
     bloqueNoValidos(invalidos));
 }
 
+// --- Vitrina al pie de la ficha y de la tabla (no en el muro ni en los avisos) --------------------------
+// Tarjetas que rotan solas; el contenido lo da el servidor del Club como datos (o el que trae el paquete).
+// No consume cuota. Al cambiar la casilla no se reinicia: solo se monta al entrar a una ficha o tabla.
+const cajaVitrina = $("vitrina");
+const PIE_FIJO = cajaVitrina.textContent;
+let tarjetasVitrina = null;
+const abrirTarjeta = url => chrome.tabs.create({ url }).catch(() => abrir(url));
+function mostrarVitrina(si) {
+  if (!si) {
+    if (cajaVitrina.classList.contains("viva")) {
+      if (cajaVitrina.__vitrina) cajaVitrina.__vitrina.parar();
+      cajaVitrina.classList.remove("viva");
+      cajaVitrina.replaceChildren(PIE_FIJO);
+    }
+    return;
+  }
+  if (cajaVitrina.classList.contains("viva")) return;
+  cajaVitrina.classList.add("viva");
+  const montar = ts => { if (cajaVitrina.classList.contains("viva")) montarVitrina(cajaVitrina, ts, abrirTarjeta); };
+  if (tarjetasVitrina) return montar(tarjetasVitrina);
+  enviar({ tipo: "vitrina" }).then(ts => { if (Array.isArray(ts) && ts.length) { tarjetasVitrina = ts; montar(ts); } }).catch(() => {});
+}
+
 chrome.storage.session.onChanged.addListener(ch => { if (ch.pedido) atender(ch.pedido.newValue); });
 (async () => {
   const { pedido } = await chrome.storage.session.get("pedido");
@@ -400,3 +434,4 @@ chrome.storage.session.onChanged.addListener(ch => { if (ch.pedido) atender(ch.p
     else inicio();
   }
 })();
+

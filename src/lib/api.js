@@ -10,6 +10,8 @@
 
 export const API = "https://club.perusistemas.pro/api/v1";
 export const SITIO = API.replace(/\/api\/v1$/, "");      // el Verificador ("Ver más") vive en el mismo sitio
+import { INCLUIDAS, limpiarTarjetas } from "./vitrina.js";
+import { riesgos, vista } from "./compartir.js";
 const LOTE = 100;                     // tope del servidor por llamada
 const CACHE_MS = 12 * 3600 * 1000;
 const ESPERA_MAX_S = 5;
@@ -240,4 +242,32 @@ export async function consultar(rucs) {
   return { ok: true, resultados: rucs.map(r => todos[r]), gastadas,
            datos_al: datosAl || Object.values(todos).map(x => x && x.datos_al).find(Boolean) || null,
            cuota: await cuotaActual() };
+}
+
+// --- Vitrina (no consume cuota, sin credencial) ----------------------------------------------------
+// Tarjetas del servidor (solo datos), guardadas 30 min. Sin respuesta: las incluidas en el paquete.
+const VITRINA_MS = 30 * 60 * 1000;
+export const irA = id => `${API}/vitrina/ir/${id}`;          // cuenta el clic y redirige con ?ref=ficha-ruc
+export async function vitrina() {
+  const { vitrina: v } = await chrome.storage.local.get("vitrina");
+  if (v && Date.now() - v.t < VITRINA_MS && Array.isArray(v.tarjetas) && v.tarjetas.length) return v.tarjetas;
+  const res = await llamar("/vitrina");
+  const ts = res.status === 200 ? limpiarTarjetas(res.d, irA) : [];
+  if (ts.length) { await chrome.storage.local.set({ vitrina: { t: Date.now(), tarjetas: ts } }); return ts; }
+  return v && Array.isArray(v.tarjetas) && v.tarjetas.length ? v.tarjetas : INCLUIDAS;
+}
+
+// --- Vista rapida para la tarjetita flotante -------------------------------------------------------
+// Consulta UN RUC (cuenta igual que el menu: 1 consulta; queda en cache, asi «Ver +» no cobra otra vez)
+// y devuelve SOLO lo que la tarjetita muestra: estado, condicion, la alerta principal y la razon social
+// segun el modo reservado. Nunca la credencial ni el resto de la ficha.
+export async function vistaRapida(ruc) {
+  const r = await consultar([ruc]);
+  if (!r.ok) return { ok: false, codigo: r.codigo, texto: r.texto };
+  const x = r.resultados[0];
+  if (!x || !x.encontrado) return { ok: true, encontrado: false };
+  const { reservado: res } = await chrome.storage.local.get("reservado");
+  const sem = s => ({ nombre: (s && s.nombre) || "—", semaforo: (s && s.semaforo) || "gris" });
+  return { ok: true, encontrado: true, estado: sem(x.estado), condicion: sem(x.condicion),
+           alerta: riesgos(x)[0] || null, razon: vista(x, res !== false).razon };
 }

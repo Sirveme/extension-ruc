@@ -1,4 +1,9 @@
 import { analizarTexto, motivoSinRuc, textoInvalido } from "./lib/ruc.js";
+import { invalidoVisible } from "./lib/compartir.js";
+// Modo reservado (la casilla del panel): se lee al abrir, para no esperar dentro del clic (el panel
+// lateral solo se abre dentro del gesto, sin await antes).
+let reservadoPopup = true;
+chrome.storage.local.get("reservado").then(p => { reservadoPopup = p.reservado !== false; }).catch(() => {});
 import { origenes } from "./lib/sitios.js";
 import { textoDias, pedirEstado } from "./lib/acceso.js";
 
@@ -51,7 +56,7 @@ $("ver").addEventListener("click", () => {
   const texto = $("texto").value;
   const { rucs, invalidos } = analizarTexto(texto);
   // Cada RUC errado, con su etiqueta roja AQUI mismo (se pidio a proposito: no se calla).
-  const lineas = invalidos.slice(0, 8).map(textoInvalido);
+  const lineas = invalidos.slice(0, 8).map(x => textoInvalido(invalidoVisible(x, reservadoPopup)));   // modo reservado
   if (invalidos.length > 8) lineas.push(`…y ${invalidos.length - 8} más (los verás en el panel).`);
   if (!rucs.length && !invalidos.length)
     lineas.push(motivoSinRuc(texto) === "dni" ? "Por ahora la ficha es solo por RUC (11 dígitos)." : "No encontramos ningún RUC en lo que pegaste.");

@@ -91,3 +91,19 @@ export function lineasFirma(f) {
 
 // Nombre del archivo PNG: sin el RUC completo en modo reservado.
 export const nombrePng = (x, reservado) => (reservado ? "ficha-ruc.png" : `ficha-ruc-${x.ruc}.png`);
+
+// Tabla de varios RUC para «Copiar tabla» y «Descargar CSV», segun la casilla: en modo reservado,
+// RUC y razon social parciales y sin distrito (como en pantalla). Estado, condicion y riesgos completos.
+export function filasTabla(filas, reservado) {
+  return [["RUC", "Razón social", "Estado del contribuyente", "Condición del domicilio", "Distrito", "Provincia", "Departamento", "Riesgo", "Listas"],
+    ...filas.map(x => {
+      const v = vista(x, reservado);
+      return x.encontrado
+        ? [v.ruc, v.razon, x.estado.nombre, x.condicion.nombre, reservado ? (x.distrito ? OCULTO : "") : (x.distrito || ""),
+           x.provincia || "", x.departamento || "", riesgos(x).join("; "), (x.listas || []).map(p => p.nombre).join("; ")]
+        : [v.ruc, "No figura en nuestros datos", "", "", "", "", "", "", ""];
+    })];
+}
+
+// Numero rechazado (no cumple el digito o el prefijo) tal como se muestra: parcial en modo reservado.
+export const invalidoVisible = (x, reservado) => (reservado ? { ...x, valor: ocultarRuc(x.valor) } : x);

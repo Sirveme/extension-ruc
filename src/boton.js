@@ -1,4 +1,5 @@
-// Boton flotante "Ver ficha" junto a una seleccion que ES un RUC valido. Si la seleccion parece un
+// Boton flotante "Ver ficha" junto a una seleccion que ES un RUC valido; al tocarlo, tarjetita con la
+// vista rapida (estado, condicion, alerta principal) y «Ver +» para la ficha completa en el panel. Si la seleccion parece un
 // RUC (11 digitos que empiezan con 10, 15, 17 o 20) pero no cumple el digito verificador, en su lugar
 // sale la etiqueta roja "RUC mal escrito": al tocarla, el panel dice el motivo (no consulta nada).
 // Script de contenido: SOLO se registra si la persona lo activa en Configuracion (permiso
@@ -34,45 +35,129 @@
     return /^(10|15|17|20)/.test(nums[0]) ? { ruc: nums[0], valido: false } : null;
   }
 
-  let host = null, reloj = null, rucActual = null, validoActual = true;
+  // --- Boton -> tarjetita con la vista rapida ------------------------------------------------------
+  // «Ver ficha» no consulta nada. Al tocarlo consulta ESE RUC (1 consulta, como el menu) y se expande
+  // ahi mismo: ● Activo · ● Habido · Ver +, y la alerta principal si la hay. «Ver +» abre el panel con
+  // la ficha completa (ya en cache: no se cobra otra vez). Todo dato se pinta con textContent.
+  const CSS = `<style>
+    :host { all: initial; }
+    .b { all: initial; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+      font: 600 12px/1 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; color: #1a110a; background: #e8a04a;
+      border: 1px solid #f0b56a; border-radius: 3px; padding: 6px 10px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+    .b:hover { background: #f0b56a; } .b:focus-visible { outline: 2px solid #f3eadf; outline-offset: 1px; }
+    svg { width: 12px; height: 12px; }
+    .b.mal { background: #e5534b; border-color: #f07a72; color: #1a110a; } .b.mal:hover { background: #f07a72; }
+    .t { box-sizing: border-box; min-width: 230px; max-width: 320px; display: grid; gap: 6px; padding: 9px 10px;
+      font: 500 12.5px/1.35 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; color: #f3eadf;
+      background: linear-gradient(135deg, #261d15, #1e1711); border: 1px solid #3d3024; border-left: 3px solid #e8a04a;
+      border-radius: 4px; box-shadow: 0 10px 28px rgba(0,0,0,.45); }
+    .fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .sem { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; white-space: nowrap; }
+    .sem i { width: 9px; height: 9px; border-radius: 50%; background: #8b949e; display: inline-block; }
+    .verde i { background: #4fbf7a; } .amarillo i, .ambar i { background: #e3b341; } .rojo i { background: #e5534b; }
+    .rojo { color: #f08a83; }
+    .sep { color: #75644f; }
+    .sp { flex: 1; }
+    .razon { color: #ad9a84; font-size: 11.5px; overflow-wrap: anywhere; }
+    .alerta { color: #f08a83; background: #2e1914; border-left: 3px solid #e5534b; padding: 4px 7px; font-weight: 600; }
+    .muted { color: #ad9a84; }
+    .mas { all: initial; box-sizing: border-box; cursor: pointer; font: 700 12px/1 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+      color: #1a110a; background: #e8a04a; border-radius: 3px; padding: 5px 9px; }
+    .mas:hover { background: #f0b56a; } .mas:focus-visible { outline: 2px solid #f3eadf; outline-offset: 1px; }
+  </style>`;
+
+  let host = null, raiz = null, reloj = null, rucActual = null, validoActual = true, fijo = false;
   const quitar = () => {
     if (reloj) clearTimeout(reloj);
-    reloj = null; rucActual = null;
-    if (host) { host.remove(); host = null; }
+    reloj = null; rucActual = null; fijo = false;
+    if (host) { host.remove(); host = null; raiz = null; }
   };
+  const temporizar = ms => { if (reloj) clearTimeout(reloj); reloj = setTimeout(quitar, ms); };
+  const nodo = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto) e.textContent = texto; return e; };
+  const sinRobarSeleccion = e => e.preventDefault();               // tocar la tarjeta no deshace la seleccion
+
+  function ubicar(rect, ancho) {
+    const x = Math.min(rect.right + window.scrollX - 4, window.scrollX + document.documentElement.clientWidth - ancho - 6);
+    const abajo = rect.bottom + 34 < window.innerHeight;
+    host.style.left = Math.max(window.scrollX + 4, x) + "px";
+    host.style.top = (abajo ? rect.bottom + window.scrollY + 6 : rect.top + window.scrollY - 32) + "px";
+  }
 
   function mostrar(ruc, valido, rect) {
     quitar();
     rucActual = ruc; validoActual = valido;
     host = document.createElement("ficha-ruc-boton");
     host.style.cssText = "all: initial; position: absolute; z-index: 2147483647;";
-    const raiz = host.attachShadow({ mode: "closed" });
-    raiz.innerHTML = `<style>
-      button { all: initial; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-        font: 600 12px/1 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; color: #1a110a; background: #e8a04a;
-        border: 1px solid #f0b56a; border-radius: 3px; padding: 6px 10px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
-      button:hover { background: #f0b56a; } button:focus-visible { outline: 2px solid #1a110a; outline-offset: 1px; }
-      svg { width: 12px; height: 12px; }
-      button.mal { background: #e5534b; border-color: #f07a72; color: #1a110a; }
-      button.mal:hover { background: #f07a72; }
-    </style>` + (valido
-      ? `<button type="button" title="Ver la ficha de este RUC (Ficha RUC · Perú Sistemas Pro)">
+    raiz = host.attachShadow({ mode: "closed" });
+    raiz.innerHTML = CSS + (valido
+      ? `<button type="button" class="b" title="Ver la ficha de este RUC (Ficha RUC · Perú Sistemas Pro)">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
       Ver ficha</button>`
-      : `<button type="button" class="mal" title="Este número no cumple el dígito verificador de un RUC (Ficha RUC · Perú Sistemas Pro)">✕ RUC mal escrito</button>`);
-    raiz.querySelector("button").addEventListener("click", e => {
+      : `<button type="button" class="b mal" title="Este número no cumple el dígito verificador de un RUC (Ficha RUC · Perú Sistemas Pro)">✕ RUC mal escrito</button>`);
+    const b = raiz.querySelector("button");
+    b.addEventListener("mousedown", sinRobarSeleccion);
+    b.addEventListener("click", e => {
       e.preventDefault(); e.stopPropagation();
-      const r = rucActual, v = validoActual;
-      quitar();
-      chrome.runtime.sendMessage({ tipo: v ? "ficha_desde_seleccion" : "ruc_mal_escrito", ruc: r });   // solo ese numero
+      const r = rucActual;
+      if (!validoActual) { quitar(); chrome.runtime.sendMessage({ tipo: "ruc_mal_escrito", ruc: r }); return; }
+      expandir(r, rect);
     });
-    // Debajo y al final de la seleccion; si no cabe, encima. Coordenadas del documento.
-    const x = Math.min(rect.right + window.scrollX - 4, window.scrollX + document.documentElement.clientWidth - (valido ? 96 : 140));
-    const abajo = rect.bottom + 34 < window.innerHeight;
-    host.style.left = Math.max(window.scrollX + 4, x) + "px";
-    host.style.top = (abajo ? rect.bottom + window.scrollY + 6 : rect.top + window.scrollY - 32) + "px";
+    host.addEventListener("mouseenter", () => { if (reloj) clearTimeout(reloj); });
+    host.addEventListener("mouseleave", () => temporizar(fijo ? 8000 : 4000));
+    ubicar(rect, valido ? 96 : 140);
     (document.body || document.documentElement).append(host);
-    reloj = setTimeout(quitar, 6000);                                    // se va solo a los 6 s
+    temporizar(6000);                                                  // se va solo a los 6 s
+  }
+
+  function verMas(ruc) {
+    const b = nodo("button", "mas", "Ver +");
+    b.type = "button"; b.title = "Abrir la ficha completa en el panel";
+    b.addEventListener("mousedown", sinRobarSeleccion);
+    b.addEventListener("click", e => {
+      e.preventDefault(); e.stopPropagation();
+      quitar();
+      chrome.runtime.sendMessage({ tipo: "ficha_desde_seleccion", ruc });        // panel: usa lo ya consultado
+    });
+    return b;
+  }
+
+  function pintar(tarjeta) {
+    if (!raiz) return;
+    raiz.querySelectorAll(".b, .t").forEach(n => n.remove());
+    raiz.append(tarjeta);
+  }
+
+  async function expandir(ruc, rect) {
+    fijo = true;
+    const t = nodo("div", "t"); t.setAttribute("role", "status");
+    t.addEventListener("mousedown", sinRobarSeleccion);
+    t.append(nodo("span", "muted", "Consultando…"));
+    pintar(t);
+    ubicar(rect, 240);
+    temporizar(20000);
+    let d;
+    try { d = await chrome.runtime.sendMessage({ tipo: "vista_rapida", ruc }); }
+    catch (_) { d = { ok: false, texto: "Recarga la página para usar la extensión." }; }
+    if (!host || rucActual !== ruc) return;                         // se cerro o cambio la seleccion
+    const c = nodo("div", "t"); c.setAttribute("role", "status");
+    c.addEventListener("mousedown", sinRobarSeleccion);
+    if (!d || !d.ok) {
+      const f = nodo("div", "fila"); f.append(nodo("span", "muted", (d && d.texto) || "No pudimos consultar."), nodo("span", "sp"), verMas(ruc));
+      c.append(f);
+    } else if (!d.encontrado) {
+      const f = nodo("div", "fila"); f.append(nodo("span", "muted", "No figura en nuestros datos."), nodo("span", "sp"), verMas(ruc));
+      c.append(f);
+    } else {
+      const sem = s => { const e = nodo("span", "sem " + (s.semaforo || "gris")); e.append(nodo("i"), document.createTextNode(s.nombre)); return e; };
+      const f = nodo("div", "fila");
+      f.append(sem(d.estado), nodo("span", "sep", "·"), sem(d.condicion), nodo("span", "sp"), verMas(ruc));
+      if (d.razon) c.append(nodo("div", "razon", d.razon));
+      c.append(f);
+      if (d.alerta) c.append(nodo("div", "alerta", "⚠ " + d.alerta));
+    }
+    pintar(c);
+    ubicar(rect, Math.min(320, c.getBoundingClientRect().width || 240));
+    temporizar(15000);
   }
 
   let espera = null;
@@ -80,9 +165,9 @@
     clearTimeout(espera);
     espera = setTimeout(() => {
       const sel = window.getSelection();
-      if (!sel || sel.isCollapsed || !sel.rangeCount) { quitar(); return; }
+      if (!sel || sel.isCollapsed || !sel.rangeCount) { if (!fijo) quitar(); return; }
       const r = rucDe(sel.toString());
-      if (!r) { quitar(); return; }
+      if (!r) { if (!fijo) quitar(); return; }
       if (r.ruc === rucActual && host) return;
       const rect = sel.getRangeAt(0).getBoundingClientRect();
       if (!rect || (!rect.width && !rect.height)) return;

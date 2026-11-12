@@ -68,8 +68,13 @@ chrome.runtime.onMessage.addListener((m, sender, responder) => {
   if (sender.id !== chrome.runtime.id) return;
   const desdePagina = !(sender.url && sender.url.startsWith(chrome.runtime.getURL("")));
   if (desdePagina) {
-    // Un sitio web (el script del boton) SOLO puede pedir abrir la ficha de un RUC valido.
-    // No recibe nada de vuelta: ni la credencial, ni datos, ni acceso a la API.
+    // Un sitio web (el script del boton) SOLO puede pedir abrir la ficha de un RUC valido o su vista
+    // rapida. Nunca recibe la credencial ni acceso a la API: de la vista rapida, solo estado, condicion,
+    // la alerta principal y la razon social (segun el modo reservado).
+    if (m && m.tipo === "vista_rapida" && typeof m.ruc === "string" && rucValido(m.ruc) && sender.tab) {
+      api.vistaRapida(m.ruc).then(responder, () => responder({ ok: false, texto: "No pudimos consultar. Intenta de nuevo." }));
+      return true;                                    // respuesta asincrona
+    }
     if (m && m.tipo === "ficha_desde_seleccion" && typeof m.ruc === "string" && rucValido(m.ruc) && sender.tab) {
       chrome.sidePanel.open({ windowId: sender.tab.windowId });       // dentro del gesto: sin await antes
       pedir(m.ruc, "boton");
@@ -86,6 +91,7 @@ chrome.runtime.onMessage.addListener((m, sender, responder) => {
     switch (m && m.tipo) {
       case "consultar": return api.consultar((m.rucs || []).filter(r => /^\d{11}$/.test(r)).slice(0, 500));
       case "costo": return api.costo(m.rucs || []);
+      case "vitrina": return api.vitrina();
       case "cuota": {
         const { boton } = await chrome.storage.local.get("boton");
         const est = await api.estadoAcceso();

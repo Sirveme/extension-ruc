@@ -25,6 +25,15 @@ elige: estado, condición de domicilio, ubicación y alertas de riesgo públicas
   para saber si es un RUC y mostrar el botón. No lee el resto de la página. Nada sale del equipo hasta
   que el usuario toca el botón, y entonces solo se envía ese RUC.
 
+- **Vitrina (tarjetas al pie de la ficha y de la tabla):** el contenido lo pide la extensión al servidor del
+  Club (solo textos, emojis, colores y enlaces; nunca código) y lo guarda 30 minutos en el equipo. Al tocar el
+  botón de una tarjeta, el enlace pasa por el servidor del Club, que **suma 1 al conteo de esa tarjeta en ese
+  día** y redirige al sitio con `?ref=ficha-ruc`. Solo se guarda el conteo por tarjeta y día: **sin RUC, sin IP
+  y sin identificadores** de la persona ni de la instalación. Mirar la vitrina no envía nada.
+- **Vista rápida del botón «Ver ficha»:** al tocarlo se consulta ese RUC (igual que con el menú: 1 consulta) y
+  la tarjetita muestra estado, condición, la alerta principal y la razón social según el modo reservado. La
+  página web no puede leer esa tarjetita (va en un Shadow DOM cerrado) y nunca recibe la credencial.
+
 ## Qué NO hace
 - No recorre ni guarda el contenido de las páginas que el usuario visita.
 - No registra el historial de navegación ni las URL.
